@@ -66,6 +66,9 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
   const { t, locale } = useLocale();
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [toolbarSize, setToolbarSize] = useState({ width: 700, height: 42 });
+  const bottomToolsRef = useRef<HTMLDivElement>(null);
+  const zoomToolsRef = useRef<HTMLDivElement>(null);
+  const [bottomToolsSize, setBottomToolsSize] = useState({ bottom: 0, zoom: 0 });
   const [tab, setTab] = useState<'agent' | 'properties'>('agent');
   const [prompt, setPrompt] = useState('');
   const [attachments, setAttachments] = useState<{ id: string; file: File; kind: 'file' | 'image' }[]>([]);
@@ -84,6 +87,23 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
   const shownMinimap = usePresence(minimapOpen && !board.locked ? true : null);
   const [hasUnreadGeneration, setHasUnreadGeneration] = useState(false);
   const [leftTab, setLeftTab] = useState<LeftPanelTab | null>(null);
+  useLayoutEffect(() => {
+    const bottom = bottomToolsRef.current;
+    const zoom = zoomToolsRef.current;
+    if (!bottom || !zoom) return;
+    const update = () => setBottomToolsSize(previous => {
+      const next = { bottom: bottom.offsetWidth, zoom: zoom.offsetWidth };
+      return previous.bottom === next.bottom && previous.zoom === next.zoom ? previous : next;
+    });
+    const observer = new ResizeObserver(update);
+    observer.observe(bottom);
+    observer.observe(zoom);
+    update();
+    return () => observer.disconnect();
+  }, []);
+  const bottomToolsShift = open && !leftTab && board.size.width > 1300
+    ? Math.max(0, (board.size.width + bottomToolsSize.bottom) / 2 + 16 - (board.size.width - 432 - bottomToolsSize.zoom))
+    : 0;
   const [generationRecords, setGenerationRecords] = useState<GenerationRecord[]>([]);
   const openLeftPanel = (value: LeftPanelTab) => { setLeftTab(value); if (value === 'history') setHasUnreadGeneration(false); else if (value === 'assets' || board.selectedIds.length > 0) onNotify(demoNotice(locale)); };
   // Demo submissions stand in for new generation records until generation is connected.
@@ -258,12 +278,12 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       <Tool icon="canvas-imgIcon2" label={t("任务")} size={24} unread={hasUnreadGeneration} onClick={() => openLeftPanel('history')} />
     </div>}
     <CanvasLeftPanel layersDisabled={!!localEdit} tab={leftTab} hasSelectedElement={board.selectedIds.length > 0} onTabChange={openLeftPanel} onClose={() => setLeftTab(null)} records={generationRecords} unread={hasUnreadGeneration} uploads={uploads} onUpload={onRememberUpload} onNotify={onNotify} />
-    <div className="bottom-tools wb-surface" data-canvas-ui data-phase={phase} role="toolbar" aria-label={t("画布工具栏")}>
+    <div ref={bottomToolsRef} className="bottom-tools wb-surface" data-canvas-ui data-phase={phase} role="toolbar" aria-label={t("画布工具栏")} style={{ '--bottom-tools-shift': `${bottomToolsShift}px` } as CSSProperties}>
       <Tool disabled={!!localEdit} icon="canvas-imgIconEditor" label={t("选择 V")} active={board.effectiveMode === 'select'} onClick={() => board.setMode('select')} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor1" label={t("抓手 H")} active={board.effectiveMode === 'hand'} onClick={() => board.setMode('hand')} />
       <Tool icon="canvas-imgIconEditor2" label={t("撤销")} disabled={!!localEdit || !board.canUndo} onClick={board.undo} /><Tool icon="canvas-imgIconEditor3" label={t("重做")} disabled={!!localEdit || !board.canRedo} onClick={board.redo} /><Divider vertical />
       <Tool disabled={!!localEdit} icon="canvas-imgIconEditor4" label={t("添加矩形")} onClick={unavailable} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor5" label={t("添加画框")} onClick={unavailable} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor6" label={t("添加文字")} onClick={unavailable} /><Tool disabled={!!localEdit} icon="canvas-imgIconSystem5" label={t("上传图片")} onClick={onUpload} /><Divider vertical /><Tool disabled={!!localEdit} icon="canvas-imgIconBusinessApparelDesign1" label={t("工艺单")} onClick={() => action(t("工艺单"))} />
     </div>
-    <div className={`zoom-tools ${open ? 'with-panel' : ''}`} data-canvas-ui data-phase={phase}>
+    <div ref={zoomToolsRef} className={`zoom-tools ${open ? 'with-panel' : ''}`} data-canvas-ui data-phase={phase}>
       <div className="zoom-pill wb-surface" data-workbench-menu><Tool icon="canvas-imgIconEditor8" label={t("缩小")} disabled={!!localEdit} onClick={() => board.zoomAt(board.camera.zoom / 1.2, undefined, { animate: true, duration: 200 })} /><Button className="zoom-trigger" disabled={!!localEdit} aria-haspopup="true" aria-expanded={menu === 'zoom'} aria-controls="canvas-zoom-menu" onClick={() => toggleMenu('zoom')}><span>{Math.round(board.camera.zoom * 100)}%</span><Icon name="zoom-chevron-up" size={16} /></Button><Tool icon="canvas-imgIconEditor9" label={t("放大")} disabled={!!localEdit} onClick={() => board.zoomAt(board.camera.zoom * 1.2, undefined, { animate: true, duration: 200 })} />{shownMenu.value === 'zoom' && <div id="canvas-zoom-menu" className="workbench-menu zoom-menu" data-phase={shownMenu.phase} inert={shownMenu.phase === 'exit'}>{zoomOptions.map(n => <button key={n} aria-pressed={n === zoomPercent} onClick={() => { board.zoomAt(n / 100, undefined, { animate: true }); setMenu(null); }}><span className="zoom-option-label">{n}%</span>{n === zoomPercent && <Icon name="check" size={16} />}</button>)}<button onClick={() => { board.fit({ animate: true }); setMenu(null); }}><span className="zoom-option-label">{t("适应屏幕")}</span></button></div>}</div>
       <div className="round-tool wb-surface canvas-arrange-control" data-workbench-menu>
         <Button className="workbench-tool" disabled={!!localEdit} aria-label={t('整理画布')} title={t('整理画布')} aria-haspopup="menu" aria-expanded={menu === 'arrange'} aria-controls="canvas-arrange-menu" onClick={() => toggleMenu('arrange')} onKeyDown={event => {
