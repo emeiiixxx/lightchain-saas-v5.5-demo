@@ -172,7 +172,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     }
   };
   const quickEditVisible = usePresence(quickEdit === board.selected ? quickEdit : null);
-  const rotationLocked = !!localEdit;
+  const rotationLocked = !!localEdit || !!quickEdit;
   useEffect(() => { setQuickEdit(null); }, [board.selected]);
   const [preview, setPreview] = useState(false);
   const shownPanel = usePresence(open ? true : null);
@@ -288,7 +288,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     </div>
     {selected && !board.marquee && <>
       <div className="element-selection" style={{ left: selected.x * board.camera.zoom + board.camera.x, top: selected.y * board.camera.zoom + board.camera.y, width: selected.width * board.camera.zoom, height: selected.height * board.camera.zoom, transform: `rotate(${selected.rotation ?? 0}deg)` }}>
-        {['tl', 't', 'tr', 'l', 'r', 'bl', 'b', 'br', 'rotate'].map(handle => localEdit ? <span key={handle} className={`selection-handle handle-${handle}`} aria-hidden="true">{handle === 'rotate' && <Icon name="canvas-imgIcon0201" size={16} />}</span> : <button key={handle} data-canvas-ui className={`selection-handle handle-${handle}`} aria-label={handle === 'rotate' ? t("旋转图片") : t("调整图片尺寸")} onPointerDown={e => startTransform(e, handle)} onPointerMove={moveTransform} onPointerUp={e => { transform.current = null; delete e.currentTarget.dataset.rotating; }} onPointerCancel={e => { transform.current = null; delete e.currentTarget.dataset.rotating; }} onLostPointerCapture={e => { transform.current = null; delete e.currentTarget.dataset.rotating; }}>{handle === 'rotate' && <Icon name="canvas-imgIcon0201" size={16} />}</button>)}
+        {['tl', 't', 'tr', 'l', 'r', 'bl', 'b', 'br', ...(quickEdit ? [] : ['rotate'])].map(handle => localEdit ? <span key={handle} className={`selection-handle handle-${handle}`} aria-hidden="true">{handle === 'rotate' && <Icon name="canvas-imgIcon0201" size={16} />}</span> : <button key={handle} data-canvas-ui className={`selection-handle handle-${handle}`} aria-label={handle === 'rotate' ? t("旋转图片") : t("调整图片尺寸")} onPointerDown={e => startTransform(e, handle)} onPointerMove={moveTransform} onPointerUp={e => { transform.current = null; delete e.currentTarget.dataset.rotating; }} onPointerCancel={e => { transform.current = null; delete e.currentTarget.dataset.rotating; }} onLostPointerCapture={e => { transform.current = null; delete e.currentTarget.dataset.rotating; }}>{handle === 'rotate' && <Icon name="canvas-imgIcon0201" size={16} />}</button>)}
       </div>
       {shownElementToolbar.value === selected.id && <div ref={toolbarRef} className="element-toolbar wb-surface" data-canvas-ui data-phase={shownElementToolbar.phase} inert={shownElementToolbar.phase === 'exit'} role="toolbar" aria-label={t("元素工具栏")} style={canvasToolbarPosition(imageBounds(selected), board.camera, board.size, toolbarSize, open ? 432 : 16)}>
         <Button icon="canvas-imgIconBusinessAi1" aria-expanded={quickEdit === selected.id} onClick={() => { setQuickEdit(quickEdit === selected.id ? null : selected.id); setMenu(null); }}>{t("快捷编辑")}</Button><Divider vertical />
