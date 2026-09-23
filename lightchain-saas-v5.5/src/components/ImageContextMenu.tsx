@@ -75,7 +75,7 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
     {subTrigger('order', '图层顺序', 'context-imgLeftIcon1')}
     {item('复制', 'context-imgLeftIcon2', board.copySelected, `${modifier} + C`)}
     {item('复制并粘贴', 'context-imgLeftIcon3', board.duplicate, `${modifier} + D`)}
-    {item('设为项目封面', 'context-imgLeftIcon4', () => board.setCover(shown.value!.id!))}
+    {item('设为项目封面', 'context-project-cover', () => board.setCover(shown.value!.id!))}
     <div className="element-menu-divider" role="separator" />
     {item('删除', 'context-imgLeftIcon5', board.removeSelected, '←/del')}
     {sub.value && <div className={`image-context-menu image-context-submenu ${sub.value === 'download' ? 'element-design-menu download-format-menu' : ''} ${subPosition.left ? 'opens-left' : ''}`} role="menu" aria-label={t(sub.value === 'download' ? '下载格式' : '图层顺序')} data-phase={sub.phase} inert={sub.phase === 'exit'} style={{ left: Math.max(8, subPosition.x), top: subPosition.y, width: subWidth }}>
