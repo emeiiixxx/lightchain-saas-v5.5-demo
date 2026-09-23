@@ -48,7 +48,7 @@ button:disabled { opacity: .4; cursor: default; }
 .welcome h1 { margin: 0; font-size: 40px; font-weight: 700; line-height: 48px; letter-spacing: 0; }
 .welcome > p { margin: 16px 0 0; font-size: 20px; line-height: 24px; color: var(--text-tertiary); }
 .upload-zone { position: relative; display: flex; align-items: center; justify-content: center; width: 800px; height: 428px; margin-top: 24px; padding: 0; overflow: hidden; border: 1px dashed transparent; border-radius: 32px; background: transparent; pointer-events: auto; transition-property: background-color, border-color; }
-.collage { display: block; position: relative; width: 752px; height: 292.621px; flex: none; top: .31px; transition-property: transform; }
+.collage { display: block; position: relative; width: 752px; height: 292.621px; flex: none; top: .31px; transition-property: transform, filter; }
 .sample-position { position: absolute; display: flex; align-items: center; justify-content: center; }
 .sample-card { position: relative; display: block; flex: none; width: 201.064px; height: 258.511px; border-radius: 17.234px; border: 1px solid var(--border-strong); background: var(--text-on-brand-white); box-shadow: var(--shadow-m); overflow: hidden; }
 .sample-card img { position: absolute; max-width: none; object-fit: fill; pointer-events: none; }
@@ -63,13 +63,14 @@ button:disabled { opacity: .4; cursor: default; }
 .sample-pattern img { left: 8.14%; top: 15.09%; width: 86.85%; height: 67.55%; }
 .sample-fabric { left: 534.94px; top: 17.72px; width: 201.064px; height: 258.511px; }
 .sample-fabric img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
-/* Figma 1:9695: full blurred overlay; the collage stays in place. */
-.upload-hover-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--upload-hover-overlay); backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px); opacity: 0; pointer-events: none; transition-property: opacity; }
+/* Figma 1:9695: blur the collage itself so the hover effect renders consistently. */
+.upload-hover-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--upload-hover-overlay); opacity: 0; pointer-events: none; transition-property: opacity; }
 .upload-hover-content { flex: 1; width: 100%; min-height: 0; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: var(--text-on-brand-white); }
 .upload-hover-copy { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0 32px; text-align: center; }
 .upload-hover-copy strong { font-size: 14px; font-weight: 500; line-height: 20px; color: var(--text-on-brand-white); }
 .upload-hover-copy > span { font-size: 12px; font-weight: 400; line-height: 20px; color: var(--text-placeholder); }
 .upload-zone:is(:hover, :focus-visible, .dragover) { background: var(--surface-secondary); border-color: var(--border-medium); }
+.upload-zone:is(:hover, :focus-visible, .dragover) .collage { filter: blur(50px); }
 .upload-zone:is(:hover, :focus-visible, .dragover) .upload-hover-overlay { opacity: 1; }
 .upload-zone.dragover { border-color: var(--border-brand); }
 .asset-panel { position: absolute; z-index: 6; width: 280px; right: 16px; top: 68px; bottom: 16px; padding: 16px; background: var(--surface-default); border: 1px solid var(--border-weak); border-radius: var(--radius-xl); box-shadow: var(--shadow-l); overflow-y: auto; font-size: 14px; }
