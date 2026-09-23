@@ -238,6 +238,7 @@ html:not([lang='zh-CN']) .upload-hover-copy { max-width: 640px; padding: 0 16px;
 
 /* Image context menu: 36:2471, download 2:16302, layer order 2:16524. */
 .image-context-menu { position: fixed; z-index: 60; display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--border-weak); border-radius: var(--radius-l); background: var(--surface-floating); box-shadow: var(--shadow-l); color: var(--text-secondary); pointer-events: auto; }
+.image-context-menu[tabindex='-1']:focus { outline: none; }
 .image-context-menu > button { display: flex; align-items: center; gap: 8px; width: 100%; height: 32px; flex: none; padding: 0 8px; border-radius: var(--radius-base); font-size: 14px; font-weight: 400; line-height: 20px; text-align: left; white-space: nowrap; }
 .image-context-menu > button > span:not(.icon) { flex: 1; }
 .image-context-menu > button:is(:hover, :focus-visible, [aria-expanded='true']):not(:disabled) { color: var(--text-primary); background: var(--state-hover); }

@@ -27,7 +27,8 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
   useEffect(() => {
     setSubmenu(null);
     if (!board.contextMenu) return;
-    root.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
+    // Receive keyboard events without highlighting the first item on pointer open.
+    root.current?.focus({ preventScroll: true });
     const dismiss = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) board.setContextMenu(null); };
     const resize = () => board.setContextMenu(null);
     window.addEventListener('pointerdown', dismiss);
@@ -58,18 +59,18 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
     if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
       e.preventDefault(); const buttons = Array.from(menu.querySelectorAll<HTMLButtonElement>('button')).filter(b => b.closest('[role="menu"]') === menu && !b.disabled);
       const index = buttons.indexOf(target as HTMLButtonElement);
-      const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (index + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+      const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : index < 0 ? (e.key === 'ArrowDown' ? 0 : buttons.length - 1) : (index + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
       buttons[next]?.focus();
     }
   };
   if (!shown.value) return null;
-  if (shown.value.id === null) return <div ref={root} className="image-context-menu" role="menu" aria-label={t('上传图片')} data-canvas-ui data-workbench-menu data-phase={shown.phase} inert={shown.phase === 'exit'} style={{ left: position.x, top: position.y, width }} onKeyDown={keys} onContextMenu={event => event.preventDefault()}>
+  if (shown.value.id === null) return <div ref={root} className="image-context-menu" role="menu" tabIndex={-1} aria-label={t('上传图片')} data-canvas-ui data-workbench-menu data-phase={shown.phase} inert={shown.phase === 'exit'} style={{ left: position.x, top: position.y, width }} onKeyDown={keys} onContextMenu={event => event.preventDefault()}>
     <button type="button" role="menuitem" onClick={() => { close(); onUpload(); }}><Icon name="canvas-imgIconSystem5" size={20} /><span>{t('上传图片')}</span></button>
   </div>;
   const subTrigger = (kind: 'download' | 'order', label: string, icon: string) => <button type="button" role="menuitem" data-sub={kind} aria-haspopup="menu" aria-expanded={submenu === kind} onPointerEnter={e => openSub(kind, e.currentTarget)} onClick={e => openSub(kind, e.currentTarget)}><Icon name={icon} size={20} /><span>{t(label)}</span><Icon name="context-img" size={16} /></button>;
   const item = (label: string, icon: string, action: () => void, shortcut?: string) => <button type="button" role="menuitem" onPointerEnter={() => setSubmenu(null)} onFocus={() => setSubmenu(null)} onClick={() => perform(action)}><Icon name={icon} size={20} /><span>{t(label)}</span>{shortcut && <kbd>{shortcut}</kbd>}</button>;
   const index = board.images.findIndex(image => image.id === board.selected);
-  return <div ref={root} className="image-context-menu" role="menu" aria-label={t('图片右键菜单')} data-canvas-ui data-workbench-menu data-phase={shown.phase} inert={shown.phase === 'exit'} style={{ left: position.x, top: position.y, width }} onKeyDown={keys} onContextMenu={e => e.preventDefault()}>
+  return <div ref={root} className="image-context-menu" role="menu" tabIndex={-1} aria-label={t('图片右键菜单')} data-canvas-ui data-workbench-menu data-phase={shown.phase} inert={shown.phase === 'exit'} style={{ left: position.x, top: position.y, width }} onKeyDown={keys} onContextMenu={e => e.preventDefault()}>
     {subTrigger('download', '下载', 'context-imgLeftIcon')}
     <div className="element-menu-divider" role="separator" />
     {subTrigger('order', '图层顺序', 'context-imgLeftIcon1')}
