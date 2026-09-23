@@ -275,7 +275,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       <p role="status">{t('当前视窗没有内容，可点击按钮快速回到内容区域')}</p>
       <Button variant="primary" size="s" onClick={board.returnToContent}>{t('回到内容')}</Button>
     </div>}
-    {board.images.filter(item => item.generating !== undefined).map(item => <GeneratingPlaceholder key={item.id} active={!!item.generating} suspended={board.isolationActive} style={{ left: item.x * board.camera.zoom + board.camera.x, top: item.y * board.camera.zoom + board.camera.y, width: item.width * board.camera.zoom, height: item.height * board.camera.zoom, visibility: board.isolationActive ? 'hidden' : 'visible' }} />)}
+    {board.images.filter(item => item.generating !== undefined).map(item => <GeneratingPlaceholder key={item.id} active={!!item.generating} zoom={board.camera.zoom} suspended={board.isolationActive} style={{ left: item.x * board.camera.zoom + board.camera.x, top: item.y * board.camera.zoom + board.camera.y, width: item.width * board.camera.zoom, height: item.height * board.camera.zoom, visibility: board.isolationActive ? 'hidden' : 'visible' }} />)}
     {board.marquee && <div className="canvas-marquee" aria-hidden="true" style={{ left: board.marquee.x * board.camera.zoom + board.camera.x, top: board.marquee.y * board.camera.zoom + board.camera.y, width: board.marquee.width * board.camera.zoom, height: board.marquee.height * board.camera.zoom }} />}
     {board.selectedIds.length > 1 && !board.marquee && <MultiSelectionControls key={board.selectedIds.join('|')} board={board} onNotify={onNotify} />}
     {!leftTab && <div className="left-tools wb-surface" data-canvas-ui data-phase="enter" role="toolbar" aria-label={t("画布功能栏")}>

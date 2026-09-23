@@ -64,17 +64,17 @@ export function paintCanvasImage(ctx: CanvasRenderingContext2D, img: CanvasImage
   ctx.restore();
 }
 
-function paintPendingTile(ctx: CanvasRenderingContext2D, img: CanvasImage, zoom: number, palette: CanvasPalette) {
+function paintPendingTile(ctx: CanvasRenderingContext2D, img: CanvasImage, palette: CanvasPalette) {
   ctx.save();
   ctx.translate(img.x + img.width / 2, img.y + img.height / 2);
   ctx.rotate((img.rotation ?? 0) * Math.PI / 180);
   ctx.beginPath(); ctx.rect(-img.width / 2, -img.height / 2, img.width, img.height); ctx.clip();
   ctx.fillStyle = palette.surface; ctx.fillRect(-img.width / 2, -img.height / 2, img.width, img.height);
   // Static indeterminate marker while isolated. The task itself continues normally.
-  const width = Math.min(img.width * .6, 120 / zoom), height = 8 / zoom;
-  ctx.fillStyle = palette.track; ctx.beginPath(); ctx.roundRect(-width / 2, -16 / zoom, width, height, height / 2); ctx.fill();
-  ctx.fillStyle = palette.progress; ctx.beginPath(); ctx.roundRect(-width * .15, -16 / zoom, width * .3, height, height / 2); ctx.fill();
-  ctx.fillStyle = palette.text; ctx.font = `${12 / zoom}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const width = Math.min(img.width * .6, 120), height = 8;
+  ctx.fillStyle = palette.track; ctx.beginPath(); ctx.roundRect(-width / 2, -16, width, height, height / 2); ctx.fill();
+  ctx.fillStyle = palette.progress; ctx.beginPath(); ctx.roundRect(-width * .15, -16, width * .3, height, height / 2); ctx.fill();
+  ctx.fillStyle = palette.text; ctx.font = `12px ${palette.fontFamily}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   ctx.fillText(palette.loadingLabel, 0, 0);
   ctx.restore();
 }
@@ -83,7 +83,7 @@ export function paintCanvasScene(ctx: CanvasRenderingContext2D, images: CanvasIm
   ctx.save(); ctx.translate(camera.x, camera.y); ctx.scale(camera.zoom, camera.zoom);
   for (const image of images) {
     if (image.id === excludedId || !visible(image, camera, viewport)) continue;
-    if (image.generating) { if (includePending) paintPendingTile(ctx, image, camera.zoom, palette); }
+    if (image.generating) { if (includePending) paintPendingTile(ctx, image, palette); }
     else paintCanvasImage(ctx, image, palette);
   }
   ctx.restore();
