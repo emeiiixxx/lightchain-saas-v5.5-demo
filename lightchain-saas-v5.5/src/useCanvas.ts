@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { expandGroups, imageBounds, selectionBounds, type Alignment, type Bounds } from './canvas-selection';
 import { intersectsViewport, screenBounds } from './canvas-toolbar';
 
-export type CanvasImage = { id: string; name: string; image: HTMLImageElement; url: string; mimeType?: string; x: number; y: number; width: number; height: number; addedAt?: number; generationParentId?: string; generationRootId?: string; generationRootAddedAt?: number; generationBatchId?: string; generationIndex?: number; groupId?: string; groupedAt?: number; generating?: boolean; fit?: 'cover'; rotation?: number; radius?: number; opacity?: number; flipX?: boolean; flipY?: boolean; stroke?: string; strokeWidth?: number; strokeOpacity?: number; strokeStyle?: 'solid' | 'dashed' | 'dotted'; strokeAlign?: 'inside' | 'center' | 'outside'; favorite?: boolean; cover?: boolean };
+export type CanvasImage = { id: string; name: string; image: HTMLImageElement; url: string; mimeType?: string; x: number; y: number; width: number; height: number; addedAt?: number; generatedAt?: number; generationParentId?: string; generationRootId?: string; generationRootAddedAt?: number; generationBatchId?: string; generationIndex?: number; groupId?: string; groupedAt?: number; generating?: boolean; fit?: 'cover'; rotation?: number; radius?: number; opacity?: number; flipX?: boolean; flipY?: boolean; stroke?: string; strokeWidth?: number; strokeOpacity?: number; strokeStyle?: 'solid' | 'dashed' | 'dotted'; strokeAlign?: 'inside' | 'center' | 'outside'; favorite?: boolean; cover?: boolean };
 type Camera = { x: number; y: number; zoom: number };
 type Point = { x: number; y: number };
 function movableImageAt(images: CanvasImage[], point: Point, camera: Camera) {
@@ -292,7 +292,18 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     finishPlacement();
     const { images: items, selectedIds: ids } = live.current;
     if (!ids.length) return;
-    remember(items); const next = items.filter(item => !ids.includes(item.id));
+    remember(items);
+    const deletedCover = items.some(item => item.cover && ids.includes(item.id));
+    let next = items.filter(item => !ids.includes(item.id));
+    if (deletedCover) {
+      const latest = next.reduce<CanvasImage | undefined>((candidate, item) => {
+        if (item.generating || !item.generationBatchId) return candidate;
+        const time = item.generatedAt ?? item.addedAt ?? 0;
+        const previousTime = candidate?.generatedAt ?? candidate?.addedAt ?? 0;
+        return !candidate || time > previousTime || (time === previousTime && (item.generationIndex ?? 0) > (candidate.generationIndex ?? 0)) ? item : candidate;
+      }, undefined);
+      next = next.map(item => ({ ...item, cover: item.id === latest?.id }));
+    }
     live.current.images = next; setImages(next); setSelected(null);
   }, [remember, setSelected, finishPlacement]);
   const undo = useCallback(() => { if (lock.current) return; finishPlacement(); const snapshot = history.current.pop(); if (snapshot) { future.current.push(live.current.images); live.current.images = snapshot; setImages(snapshot); setSelected(null); setHistoryVersion(v => v + 1); } }, [finishPlacement, setSelected]);
@@ -312,7 +323,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     const state = live.current, groups = new Map<string, { id: string; time: number }>();
     const clones = items.map(item => {
       if (item.groupId && !groups.has(item.groupId)) groups.set(item.groupId, { id: crypto.randomUUID(), time: nextCanvasTime() });
-      return { ...item, cover: false, id: crypto.randomUUID(), addedAt: nextCanvasTime(), generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: item.groupId ? groups.get(item.groupId)!.id : undefined, groupedAt: item.groupId ? groups.get(item.groupId)!.time : undefined, x: item.x + 32, y: item.y + 32 };
+      return { ...item, cover: false, id: crypto.randomUUID(), addedAt: nextCanvasTime(), generatedAt: undefined, generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: item.groupId ? groups.get(item.groupId)!.id : undefined, groupedAt: item.groupId ? groups.get(item.groupId)!.time : undefined, x: item.x + 32, y: item.y + 32 };
     });
     remember(state.images); const next = [...state.images, ...clones]; live.current.images = next; setImages(next);
     selectMany(clones.map(item => item.id)); return clones;
@@ -439,7 +450,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     const rows = Math.ceil(items.length / columns);
     const width = columns * cellWidth + (columns - 1) * gap;
     const height = rows * cellHeight + (rows - 1) * gap;
-    const additions = items.map((item, index) => ({ ...item, id: crypto.randomUUID(), addedAt: nextCanvasTime(), generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: undefined, groupedAt: undefined, x: center.x - width / 2 + (index % columns) * (cellWidth + gap), y: center.y - height / 2 + Math.floor(index / columns) * (cellHeight + gap) }));
+    const additions = items.map((item, index) => ({ ...item, id: crypto.randomUUID(), addedAt: nextCanvasTime(), generatedAt: undefined, generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: undefined, groupedAt: undefined, x: center.x - width / 2 + (index % columns) * (cellWidth + gap), y: center.y - height / 2 + Math.floor(index / columns) * (cellHeight + gap) }));
     remember(old); const next = [...old, ...additions]; live.current.images = next;
     setImages(next); setSelected(additions[0].id); fit();
   }, [fit, remember, worldPoint, finishPlacement]);
@@ -471,11 +482,14 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
 
   const finishGeneration = useCallback((ids: string[], results: Omit<CanvasImage, 'x' | 'y'>[] | null) => {
     finishPlacement();
-    const resultById = new Map(ids.map((id, index) => [id, results?.[index]]));
+    const resultById = new Map(ids.map((id, index) => {
+      const result = results?.[index];
+      return [id, result ? { ...result, generatedAt: nextCanvasTime() } : undefined] as const;
+    }));
     const settle = (items: CanvasImage[]) => items.flatMap(item => {
       if (!resultById.has(item.id)) return [item];
       const result = resultById.get(item.id);
-      return result ? [{ ...item, name: result.name, url: result.url, image: result.image, generating: false }] : [];
+      return result ? [{ ...item, name: result.name, url: result.url, image: result.image, mimeType: result.mimeType, generatedAt: result.generatedAt, generating: false }] : [];
     });
     // Undo/redo must never bring back a placeholder whose task has already finished.
     history.current = history.current.map(settle); future.current = future.current.map(settle);
