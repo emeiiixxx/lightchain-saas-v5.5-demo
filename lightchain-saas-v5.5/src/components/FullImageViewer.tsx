@@ -93,7 +93,7 @@ export function FullImageViewer({ image, locale, phase, onClose, images = [], se
         <ProgressiveImage src={item.url} alt="" fit="contain" eager />
       </button>)}
     </nav>}
-    <div className="full-image-instructions" role="status" data-node-id="68:27757">{details ? (locale === 'en' ? '💡 Scroll to zoom and drag to explore' : locale === 'ja' ? '💡 スクロールで拡大・縮小、ドラッグで移動できます' : '💡您可通过滚轮缩放和拖动查看') : t.fullImageInstructions}</div>
+    <div className="full-image-instructions" role="status" data-node-id="68:27757">{details ? (locale === 'en' ? '💡 Scroll to zoom and drag to explore. Press ESC to return to the canvas.' : locale === 'ja' ? '💡 スクロールで拡大・縮小、ドラッグで移動できます。ESC キーでキャンバスに戻れます' : '💡您可通过滚轮缩放和拖动查看，支持按 ESC 返回画布') : t.fullImageInstructions}</div>
     {details}
     {details ? <Button variant="outline" size="m" className="task-detail-back" onClick={onClose}><Icon name="task-detail-back" size={20} />{locale === 'en' ? 'Back to canvas' : locale === 'ja' ? 'キャンバスに戻る' : '返回画布'}</Button> : <Button className="full-image-close" aria-label={t.close} onClick={onClose} data-node-id="68:28013"><Icon name="close" size={20} /></Button>}
   </dialog>, document.body);
