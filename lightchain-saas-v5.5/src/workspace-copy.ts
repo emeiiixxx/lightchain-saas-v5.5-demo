@@ -125,7 +125,7 @@ export const workspaceCopy: Record<string, readonly [string, string]> = {
 '图片右键菜单': ['Image context menu', '画像のコンテキストメニュー'],
 '下载格式': ['Download format', 'ダウンロード形式'], '图层顺序': ['Layer order', '重なり順'],
 '复制并粘贴': ['Duplicate', '複製'], '复制': ['Copy', 'コピー'], '删除': ['Delete', '削除'],
-'设为封面': ['Set as cover', 'カバーに設定'], '已设为封面': ['Cover selected', 'カバーに設定済み'],
+'设为项目封面': ['Set as project cover', 'プロジェクトのカバーに設定'],
 '已设为项目封面': ['Set as project cover', 'プロジェクトのカバーに設定しました'], '项目封面': ['Project cover', 'プロジェクトのカバー'],
 '已复制，可在画布中粘贴': ['Copied. Paste on the canvas.', 'コピーしました。キャンバスに貼り付けできます。'],
 '移到顶层': ['Bring to front', '最前面へ'], '上移一层': ['Bring forward', '前面へ'],

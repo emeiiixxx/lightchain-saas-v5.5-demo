@@ -363,11 +363,17 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     remember(state.images); const next = [...state.images]; const [item] = next.splice(index, 1); next.splice(target, 0, item);
     live.current.images = next; setImages(next);
   }, [remember, finishPlacement]);
-  const setCover = useCallback(() => {
+  const setCover = useCallback((imageId: string) => {
     finishPlacement();
-    const state = live.current; if (!state.selected) return;
-    remember(state.images); const next = state.images.map(item => ({ ...item, cover: item.id === state.selected }));
-    live.current.images = next; setImages(next); notify('已设为项目封面');
+    const state = live.current;
+    const target = state.images.find(item => item.id === imageId);
+    if (!target) return;
+    if (!target.cover) {
+      remember(state.images);
+      const next = state.images.map(item => ({ ...item, cover: item.id === imageId }));
+      live.current.images = next; setImages(next);
+    }
+    notify('已设为项目封面');
   }, [remember, notify, finishPlacement]);
   const downloadImage = useCallback(async (format: 'PNG' | 'JPG' | 'WebP' | 'AVIF') => {
     const state = live.current;

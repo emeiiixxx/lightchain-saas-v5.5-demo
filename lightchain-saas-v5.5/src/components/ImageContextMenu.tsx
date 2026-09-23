@@ -66,7 +66,6 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
   if (shown.value.id === null) return <div ref={root} className="image-context-menu" role="menu" aria-label={t('上传图片')} data-canvas-ui data-workbench-menu data-phase={shown.phase} inert={shown.phase === 'exit'} style={{ left: position.x, top: position.y, width }} onKeyDown={keys} onContextMenu={event => event.preventDefault()}>
     <button type="button" role="menuitem" onClick={() => { close(); onUpload(); }}><Icon name="canvas-imgIconSystem5" size={20} /><span>{t('上传图片')}</span></button>
   </div>;
-  const selected = board.images.find(item => item.id === shown.value!.id);
   const subTrigger = (kind: 'download' | 'order', label: string, icon: string) => <button type="button" role="menuitem" data-sub={kind} aria-haspopup="menu" aria-expanded={submenu === kind} onPointerEnter={e => openSub(kind, e.currentTarget)} onClick={e => openSub(kind, e.currentTarget)}><Icon name={icon} size={20} /><span>{t(label)}</span><Icon name="context-img" size={16} /></button>;
   const item = (label: string, icon: string, action: () => void, shortcut?: string) => <button type="button" role="menuitem" onPointerEnter={() => setSubmenu(null)} onFocus={() => setSubmenu(null)} onClick={() => perform(action)}><Icon name={icon} size={20} /><span>{t(label)}</span>{shortcut && <kbd>{shortcut}</kbd>}</button>;
   const index = board.images.findIndex(image => image.id === board.selected);
@@ -76,7 +75,7 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
     {subTrigger('order', '图层顺序', 'context-imgLeftIcon1')}
     {item('复制', 'context-imgLeftIcon2', board.copySelected, `${modifier} + C`)}
     {item('复制并粘贴', 'context-imgLeftIcon3', board.duplicate, `${modifier} + D`)}
-    {item(selected?.cover ? '已设为封面' : '设为封面', 'context-imgLeftIcon4', board.setCover)}
+    {item('设为项目封面', 'context-imgLeftIcon4', () => board.setCover(shown.value!.id!))}
     <div className="element-menu-divider" role="separator" />
     {item('删除', 'context-imgLeftIcon5', board.removeSelected, '←/del')}
     {sub.value && <div className={`image-context-menu image-context-submenu ${sub.value === 'download' ? 'element-design-menu download-format-menu' : ''} ${subPosition.left ? 'opens-left' : ''}`} role="menu" aria-label={t(sub.value === 'download' ? '下载格式' : '图层顺序')} data-phase={sub.phase} inert={sub.phase === 'exit'} style={{ left: Math.max(8, subPosition.x), top: subPosition.y, width: subWidth }}>
