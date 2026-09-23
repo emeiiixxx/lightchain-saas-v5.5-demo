@@ -1,6 +1,6 @@
 import type { CanvasImage } from './useCanvas';
 
-export type LibraryImage = Pick<CanvasImage, 'id' | 'name' | 'url'> & Partial<Pick<CanvasImage, 'width' | 'height' | 'mimeType'>>;
+export type LibraryImage = Pick<CanvasImage, 'id' | 'name' | 'url'> & Partial<Pick<CanvasImage, 'width' | 'height' | 'mimeType' | 'uploadedAt'>>;
 // Figma-provided demo fixtures, not a connected account's upload history.
 export const demoAssets: LibraryImage[] = [
   { id: 'figma-single-select', name: '彩色毛绒穿搭', url: '/assets/upload/single-select-asset.png' },
@@ -100,5 +100,5 @@ export async function prepareMainImage(asset: LibraryImage): Promise<Omit<Canvas
   image.src = asset.url;
   await image.decode();
   const width = Math.min(320, image.naturalWidth);
-  return { id: crypto.randomUUID(), name: asset.name, mimeType: asset.mimeType, url: asset.url, width, height: width * image.naturalHeight / image.naturalWidth, image };
+  return { id: crypto.randomUUID(), name: asset.name, mimeType: asset.mimeType, uploadedAt: asset.uploadedAt, url: asset.url, width, height: width * image.naturalHeight / image.naturalWidth, image };
 }

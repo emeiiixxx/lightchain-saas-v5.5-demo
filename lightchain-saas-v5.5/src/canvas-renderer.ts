@@ -4,11 +4,11 @@ import { intersectsViewport, screenBounds } from './canvas-toolbar';
 
 type Camera = { x: number; y: number; zoom: number };
 type Viewport = { width: number; height: number };
-export type CanvasPalette = { background: string; surface: string; text: string; track: string; progress: string; loadingLabel: string; badgeBackground: string; badgeText: string; coverLabel: string; vectorLabel: string; fontFamily: string };
+export type CanvasPalette = { background: string; surface: string; text: string; track: string; progress: string; loadingLabel: string; badgeBackground: string; badgeText: string; coverId?: string; coverLabel: string; vectorLabel: string; fontFamily: string };
 
 function paintImageBadges(ctx: CanvasRenderingContext2D, img: CanvasImage, zoom: number, palette: CanvasPalette) {
   const vector = img.mimeType === 'image/svg+xml' || /\.svg(?:[?#]|$)/i.test(img.name) || /\.svg(?:[?#]|$)|^data:image\/svg\+xml/i.test(img.url);
-  const labels = [...(img.cover ? [palette.coverLabel] : []), ...(vector ? [palette.vectorLabel] : [])];
+  const labels = [...(img.id === palette.coverId ? [palette.coverLabel] : []), ...(vector ? [palette.vectorLabel] : [])];
   if (!labels.length) return;
   // Figma 139:6732: fixed-size metadata inside the image's top-left corner.
   // Painting in image order preserves occlusion and edit isolation.
@@ -103,7 +103,7 @@ export class CanvasIsolationCache {
     const scale = Math.min(dpr, 2, Math.sqrt(MAX_PIXELS / viewport.width / viewport.height), MAX_EDGE / viewport.width, MAX_EDGE / viewport.height);
     const width = Math.max(1, Math.floor(viewport.width * scale)), height = Math.max(1, Math.floor(viewport.height * scale));
     const key = this.key;
-    const label = [palette.loadingLabel, palette.coverLabel, palette.vectorLabel].join('|');
+    const label = [palette.loadingLabel, palette.coverLabel, palette.vectorLabel, palette.coverId].join('|');
     if (key && key.images === images && key.id === id && key.camera.x === camera.x && key.camera.y === camera.y && key.camera.zoom === camera.zoom && key.viewport.width === viewport.width && key.viewport.height === viewport.height && key.width === width && key.height === height && key.theme === theme && key.label === label) return this.canvas;
     try {
       const canvas = this.canvas ??= document.createElement('canvas');

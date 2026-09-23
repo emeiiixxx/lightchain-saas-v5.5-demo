@@ -1,3 +1,4 @@
+import { resolveProjectCover } from './project-cover';
 import { CanvasIsolationCache, paintCanvasImage, paintCanvasScene, type CanvasPalette } from './canvas-renderer';
 import { nextCanvasTime, orderArrangementUnits } from './canvas-order';
 import { makeRoomForResults } from './generation-placement';
@@ -5,11 +6,11 @@ import { MOTION_DURATION, easeOut } from './motion';
 import { downloadSelection } from './download-selection';
 import { arrangeBoxes, type CanvasLayout } from './canvas-arrangement';
 import { exportImage } from './download-image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { expandGroups, imageBounds, selectionBounds, type Alignment, type Bounds } from './canvas-selection';
 import { intersectsViewport, screenBounds } from './canvas-toolbar';
 
-export type CanvasImage = { id: string; name: string; image: HTMLImageElement; url: string; mimeType?: string; x: number; y: number; width: number; height: number; addedAt?: number; generatedAt?: number; generationParentId?: string; generationRootId?: string; generationRootAddedAt?: number; generationBatchId?: string; generationIndex?: number; groupId?: string; groupedAt?: number; generating?: boolean; fit?: 'cover'; rotation?: number; radius?: number; opacity?: number; flipX?: boolean; flipY?: boolean; stroke?: string; strokeWidth?: number; strokeOpacity?: number; strokeStyle?: 'solid' | 'dashed' | 'dotted'; strokeAlign?: 'inside' | 'center' | 'outside'; favorite?: boolean; cover?: boolean };
+export type CanvasImage = { id: string; name: string; image: HTMLImageElement; url: string; mimeType?: string; x: number; y: number; width: number; height: number; addedAt?: number; generatedAt?: number; uploadedAt?: number; origin?: 'upload' | 'generated' | 'copy'; generationParentId?: string; generationRootId?: string; generationRootAddedAt?: number; generationBatchId?: string; generationIndex?: number; groupId?: string; groupedAt?: number; generating?: boolean; fit?: 'cover'; rotation?: number; radius?: number; opacity?: number; flipX?: boolean; flipY?: boolean; stroke?: string; strokeWidth?: number; strokeOpacity?: number; strokeStyle?: 'solid' | 'dashed' | 'dotted'; strokeAlign?: 'inside' | 'center' | 'outside'; favorite?: boolean; cover?: boolean };
 type Camera = { x: number; y: number; zoom: number };
 type Point = { x: number; y: number };
 function movableImageAt(images: CanvasImage[], point: Point, camera: Camera) {
@@ -60,6 +61,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     return () => cancelAnimationFrame(frame);
   }, [isolatedImageId]);
   const [images, setImages] = useState<CanvasImage[]>([]);
+  const projectCover = useMemo(() => resolveProjectCover(images), [images]);
   // Older in-memory demo items have no timestamps. Capture their first-seen
   // order once, so subsequent layer changes and undo never change the fallback.
   const legacyOrderClock = useRef(0);
@@ -293,17 +295,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     const { images: items, selectedIds: ids } = live.current;
     if (!ids.length) return;
     remember(items);
-    const deletedCover = items.some(item => item.cover && ids.includes(item.id));
-    let next = items.filter(item => !ids.includes(item.id));
-    if (deletedCover) {
-      const latest = next.reduce<CanvasImage | undefined>((candidate, item) => {
-        if (item.generating || !item.generationBatchId) return candidate;
-        const time = item.generatedAt ?? item.addedAt ?? 0;
-        const previousTime = candidate?.generatedAt ?? candidate?.addedAt ?? 0;
-        return !candidate || time > previousTime || (time === previousTime && (item.generationIndex ?? 0) > (candidate.generationIndex ?? 0)) ? item : candidate;
-      }, undefined);
-      next = next.map(item => ({ ...item, cover: item.id === latest?.id }));
-    }
+    const next = items.filter(item => !ids.includes(item.id));
     live.current.images = next; setImages(next); setSelected(null);
   }, [remember, setSelected, finishPlacement]);
   const undo = useCallback(() => { if (lock.current) return; finishPlacement(); const snapshot = history.current.pop(); if (snapshot) { future.current.push(live.current.images); live.current.images = snapshot; setImages(snapshot); setSelected(null); setHistoryVersion(v => v + 1); } }, [finishPlacement, setSelected]);
@@ -323,7 +315,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     const state = live.current, groups = new Map<string, { id: string; time: number }>();
     const clones = items.map(item => {
       if (item.groupId && !groups.has(item.groupId)) groups.set(item.groupId, { id: crypto.randomUUID(), time: nextCanvasTime() });
-      return { ...item, cover: false, id: crypto.randomUUID(), addedAt: nextCanvasTime(), generatedAt: undefined, generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: item.groupId ? groups.get(item.groupId)!.id : undefined, groupedAt: item.groupId ? groups.get(item.groupId)!.time : undefined, x: item.x + 32, y: item.y + 32 };
+      return { ...item, cover: false, origin: 'copy' as const, uploadedAt: undefined, id: crypto.randomUUID(), addedAt: nextCanvasTime(), generatedAt: undefined, generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: item.groupId ? groups.get(item.groupId)!.id : undefined, groupedAt: item.groupId ? groups.get(item.groupId)!.time : undefined, x: item.x + 32, y: item.y + 32 };
     });
     remember(state.images); const next = [...state.images, ...clones]; live.current.images = next; setImages(next);
     selectMany(clones.map(item => item.id)); return clones;
@@ -450,7 +442,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     const rows = Math.ceil(items.length / columns);
     const width = columns * cellWidth + (columns - 1) * gap;
     const height = rows * cellHeight + (rows - 1) * gap;
-    const additions = items.map((item, index) => ({ ...item, id: crypto.randomUUID(), addedAt: nextCanvasTime(), generatedAt: undefined, generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: undefined, groupedAt: undefined, x: center.x - width / 2 + (index % columns) * (cellWidth + gap), y: center.y - height / 2 + Math.floor(index / columns) * (cellHeight + gap) }));
+    const additions = items.map((item, index) => ({ ...item, cover: false, origin: 'upload' as const, uploadedAt: item.uploadedAt ?? nextCanvasTime(), id: crypto.randomUUID(), addedAt: nextCanvasTime(), generatedAt: undefined, generationParentId: undefined, generationRootId: undefined, generationRootAddedAt: undefined, generationBatchId: undefined, generationIndex: undefined, groupId: undefined, groupedAt: undefined, x: center.x - width / 2 + (index % columns) * (cellWidth + gap), y: center.y - height / 2 + Math.floor(index / columns) * (cellHeight + gap) }));
     remember(old); const next = [...old, ...additions]; live.current.images = next;
     setImages(next); setSelected(additions[0].id); fit();
   }, [fit, remember, worldPoint, finishPlacement]);
@@ -470,7 +462,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
       id: crypto.randomUUID(), addedAt: nextCanvasTime(), name: `${source.name} · ${index + 1}`, image: source.image, url: source.url,
       generationParentId: source.id, generationRootId: source.generationRootId ?? source.id,
       generationRootAddedAt: source.generationRootAddedAt ?? source.addedAt ?? legacyImageOrder.current.get(source.id) ?? 0,
-      generationBatchId: batchId, generationIndex: index,
+      generationBatchId: batchId, generationIndex: index, origin: 'generated',
       x: x + index * (width + gap), y,
       width, height, generating: true, fit: 'cover',
     }));
@@ -505,7 +497,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     if (!accepted.length) return;
     const results = await Promise.allSettled(accepted.map(file => new Promise<Omit<CanvasImage, 'x' | 'y'>>((resolve, reject) => {
       const url = URL.createObjectURL(file), image = new Image(); urls.current.push(url);
-      image.onload = () => { const ratio = Math.min(1, 400 / Math.max(image.naturalWidth, image.naturalHeight)); resolve({ id: crypto.randomUUID(), name: file.name, mimeType: file.type, image, url, width: image.naturalWidth * ratio, height: image.naturalHeight * ratio }); };
+      image.onload = () => { const ratio = Math.min(1, 400 / Math.max(image.naturalWidth, image.naturalHeight)); resolve({ id: crypto.randomUUID(), name: file.name, mimeType: file.type, origin: 'upload', uploadedAt: nextCanvasTime(), image, url, width: image.naturalWidth * ratio, height: image.naturalHeight * ratio }); };
       image.onerror = reject; image.src = url;
     })));
     const loaded = results.flatMap(r => r.status === 'fulfilled' ? [r.value] : []);
@@ -547,6 +539,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
       loadingLabel: locale === 'en' ? 'Generating...' : '\u751f\u6210\u4e2d...',
       badgeBackground: style.getPropertyValue('--surface-floating-strong').trim(),
       badgeText: style.getPropertyValue('--text-on-brand-white').trim(),
+      coverId: projectCover?.id,
       coverLabel: locale === 'en' ? 'Cover' : locale === 'ja' ? 'カバー' : '封面',
       vectorLabel: locale === 'en' ? 'Vector' : locale === 'ja' ? 'ベクター' : '矢量图',
       fontFamily: getComputedStyle(document.body).fontFamily,
@@ -571,7 +564,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
       isolationCache.current?.dispose(); isolationCache.current = null;
       paintCanvasScene(ctx, images, camera, size, palette);
     }
-  }, [images, camera, size, theme, locale, isolation]);
+  }, [images, camera, size, theme, locale, isolation, projectCover]);
 
   useEffect(() => {
     const canvas = canvasRef.current!, stage = canvas.parentElement!;
@@ -677,5 +670,5 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     return () => { canvas.removeEventListener('pointerenter', move); canvas.removeEventListener('pointerleave', leave); canvas.removeEventListener('contextmenu', context); stage.removeEventListener('wheel', wheel, true); canvas.removeEventListener('pointerdown', down); canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerup', up); canvas.removeEventListener('pointercancel', up); window.removeEventListener('keydown', keydown); window.removeEventListener('keyup', keyup); window.removeEventListener('blur', blur); };
   }, [fit, remember, removeSelected, undo, redo, worldPoint, zoomAt, copySelected, duplicate, paste, selectMany, setSelected, groupSelection, updateMoveCursor, finishPlacement]);
   useEffect(() => () => { urls.current.forEach(url => URL.revokeObjectURL(url)); }, []);
-  return { isolationActive: isolation.amount > 0 && images.some(image => image.id === isolation.id && !image.generating), locked, setInteractionLocked, setQuickEditing, blankClickVersion, setIsolatedImageId, editingViewport, focusImage, selectedIds, marquee, selectMany, updateImages, groupSelection, alignSelection, contextMenu, setContextMenu, copySelected, paste, reorder, setCover, downloadImage, size, mode, effectiveMode, setMode, beginEdit, updateSelected, duplicate, arrange, redo, canUndo: history.current.length > 0, canRedo: future.current.length > 0, historyVersion, canvasRef, images, selected, setSelected, camera, panning, upload, addImages, beginGeneration, finishGeneration, zoomAt, navigateMinimap, fit, returnToContent, removeSelected, undo };
+  return { projectCover, isolationActive: isolation.amount > 0 && images.some(image => image.id === isolation.id && !image.generating), locked, setInteractionLocked, setQuickEditing, blankClickVersion, setIsolatedImageId, editingViewport, focusImage, selectedIds, marquee, selectMany, updateImages, groupSelection, alignSelection, contextMenu, setContextMenu, copySelected, paste, reorder, setCover, downloadImage, size, mode, effectiveMode, setMode, beginEdit, updateSelected, duplicate, arrange, redo, canUndo: history.current.length > 0, canRedo: future.current.length > 0, historyVersion, canvasRef, images, selected, setSelected, camera, panning, upload, addImages, beginGeneration, finishGeneration, zoomAt, navigateMinimap, fit, returnToContent, removeSelected, undo };
 }
