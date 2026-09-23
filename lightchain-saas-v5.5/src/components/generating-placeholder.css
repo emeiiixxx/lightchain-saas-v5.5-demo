@@ -1,0 +1,25 @@
+.generating-placeholder { position: absolute; overflow: hidden; pointer-events: none; background: var(--background-default); transition: none; }
+/* Fade the overlay only: canvas coordinates and zoom remain unchanged. */
+.generating-placeholder[data-phase='enter'] { animation: ui-enter var(--motion-duration) var(--motion-easing) backwards; }
+.generating-placeholder[data-phase='exit'] { animation: ui-exit var(--motion-duration) var(--motion-easing) both; }
+.generating-placeholder-motion { position: absolute; inset: -75.48% -62.5% -113.75% -100.96%; animation: generating-gradient-turn 3s linear infinite; transform-origin: center; }
+.generating-placeholder-motion > div { position: absolute; }
+.generating-placeholder-motion img { position: absolute; display: block; max-width: none; }
+.generating-placeholder-green { inset: 38.74% 3.8% -3.57% 25.04%; }
+.generating-placeholder-green img { inset: -38.46%; width: 176.92%; height: 176.92%; }
+.generating-placeholder-blue { inset: 6.32% 4.63% 34.25% 30.14%; }
+.generating-placeholder-blue img { inset: -41.96%; width: 183.92%; height: 183.92%; }
+.generating-placeholder-purple { inset: -.05% 43.06% 48.19% .01%; }
+.generating-placeholder-purple img { inset: -48.08%; width: 196.16%; height: 196.16%; }
+.generating-placeholder-status { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-base); color: var(--text-secondary); font-size: 12px; line-height: 16px; }
+.generating-placeholder-status > span { white-space: nowrap; }
+.generating-placeholder-progress { width: 60%; max-width: 120px; height: 8px; overflow: hidden; border-radius: var(--radius-max); background: var(--border-strong); }
+/* Continuous compositor animation instead of ten discrete React updates per second. */
+/* Translate instead of scale so the moving end keeps its full semicircular cap. */
+.generating-placeholder-progress-fill { width: 100%; height: 100%; background: var(--brand-primary-hover); border-radius: inherit; transform: translateX(-100%); transition: none; animation: generating-progress-fill 3s linear forwards; will-change: transform; }
+@keyframes generating-progress-fill { from { transform: translateX(-100%); } to { transform: translateX(-5%); } }
+@keyframes generating-gradient-turn { from { transform: rotate(-360deg); } to { transform: rotate(0deg); } }
+@media (prefers-reduced-motion: reduce) { .generating-placeholder-motion { animation: none; } .generating-placeholder-progress-fill { animation: none; transform: translateX(-5%); } }
+/* Isolation composites pending tiles into the cached background; tasks keep running. */
+.generating-placeholder[data-suspended='true'] .generating-placeholder-motion,
+.generating-placeholder[data-suspended='true'] .generating-placeholder-progress-fill { animation-play-state: paused; }
