@@ -101,9 +101,15 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     update();
     return () => observer.disconnect();
   }, []);
-  const bottomToolsShift = open && !leftTab && board.size.width > 1300
-    ? Math.max(0, (board.size.width + bottomToolsSize.bottom) / 2 + 16 - (board.size.width - 432 - bottomToolsSize.zoom))
-    : 0;
+  let bottomToolsShift = 0;
+  let bottomToolsBottom = 16;
+  if (open && board.size.width > 1300 && bottomToolsSize.bottom && bottomToolsSize.zoom) {
+    const centeredLeft = (board.size.width - bottomToolsSize.bottom) / 2;
+    const leftLimit = leftTab ? 432 : 16;
+    const rightLimit = board.size.width - 432 - bottomToolsSize.zoom - 16 - bottomToolsSize.bottom;
+    if (rightLimit < leftLimit) bottomToolsBottom = 80;
+    else bottomToolsShift = centeredLeft - Math.max(leftLimit, Math.min(centeredLeft, rightLimit));
+  }
   const [generationRecords, setGenerationRecords] = useState<GenerationRecord[]>([]);
   const openLeftPanel = (value: LeftPanelTab) => { setLeftTab(value); if (value === 'history') setHasUnreadGeneration(false); else if (value === 'assets' || board.selectedIds.length > 0) onNotify(demoNotice(locale)); };
   // Demo submissions stand in for new generation records until generation is connected.
@@ -278,7 +284,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       <Tool icon="canvas-imgIcon2" label={t("任务")} size={24} unread={hasUnreadGeneration} onClick={() => openLeftPanel('history')} />
     </div>}
     <CanvasLeftPanel layersDisabled={!!localEdit} tab={leftTab} hasSelectedElement={board.selectedIds.length > 0} onTabChange={openLeftPanel} onClose={() => setLeftTab(null)} records={generationRecords} unread={hasUnreadGeneration} uploads={uploads} onUpload={onRememberUpload} onNotify={onNotify} />
-    <div ref={bottomToolsRef} className="bottom-tools wb-surface" data-canvas-ui data-phase={phase} role="toolbar" aria-label={t("画布工具栏")} style={{ '--bottom-tools-shift': `${bottomToolsShift}px` } as CSSProperties}>
+    <div ref={bottomToolsRef} className="bottom-tools wb-surface" data-canvas-ui data-phase={phase} role="toolbar" aria-label={t("画布工具栏")} style={{ '--bottom-tools-shift': `${bottomToolsShift}px`, '--bottom-tools-bottom': `${bottomToolsBottom}px` } as CSSProperties}>
       <Tool disabled={!!localEdit} icon="canvas-imgIconEditor" label={t("选择 V")} active={board.effectiveMode === 'select'} onClick={() => board.setMode('select')} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor1" label={t("抓手 H")} active={board.effectiveMode === 'hand'} onClick={() => board.setMode('hand')} />
       <Tool icon="canvas-imgIconEditor2" label={t("撤销")} disabled={!!localEdit || !board.canUndo} onClick={board.undo} /><Tool icon="canvas-imgIconEditor3" label={t("重做")} disabled={!!localEdit || !board.canRedo} onClick={board.redo} /><Divider vertical />
       <Tool disabled={!!localEdit} icon="canvas-imgIconEditor4" label={t("添加矩形")} onClick={unavailable} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor5" label={t("添加画框")} onClick={unavailable} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor6" label={t("添加文字")} onClick={unavailable} /><Tool disabled={!!localEdit} icon="canvas-imgIconSystem5" label={t("上传图片")} onClick={onUpload} /><Divider vertical /><Tool disabled={!!localEdit} icon="canvas-imgIconBusinessApparelDesign1" label={t("工艺单")} onClick={() => action(t("工艺单"))} />

@@ -13,7 +13,7 @@
 .left-tools { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); padding: 8px; display: flex; flex-direction: column; gap: 8px; border-radius: var(--radius-xl); z-index: 12; box-shadow: var(--shadow-l); }
 .left-tools > .workbench-tool { position: relative; width: 40px; height: 40px; border-radius: var(--radius-l); }
 .tool-unread-dot { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: var(--radius-max); background: var(--status-danger); pointer-events: none; }
-.bottom-tools { position: absolute; z-index: 12; bottom: 16px; left: 50%; transform: translateX(calc(-50% - var(--bottom-tools-shift, 0px))); display: flex; align-items: center; gap: 4px; padding: 8px; }
+.bottom-tools { position: absolute; z-index: 12; bottom: var(--bottom-tools-bottom, 16px); left: 50%; transform: translateX(calc(-50% - var(--bottom-tools-shift, 0px))); display: flex; align-items: center; gap: 4px; padding: 8px; }
 .bottom-tools[data-phase] { transition-property: bottom, transform; }
 .bottom-tools > .divider { margin: 0 4px; }
 .zoom-tools { position: absolute; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 8px; z-index: 13; }
@@ -144,8 +144,6 @@ body:has(.handle-rotate[data-rotating='true']), body:has(.handle-rotate[data-rot
 .image-preview-dialog > img { max-width: 100%; max-height: 75dvh; object-fit: contain; margin: auto; }
 .new-text-input { display: block; width: 100%; margin-bottom: 16px; background: var(--state-default); border: 1px solid var(--border-weak); border-radius: 8px; padding: 8px 12px; }
 .right-panel[data-phase='enter'] { animation-name: sidebar-enter; }.right-panel[data-phase='exit'] { animation-name: sidebar-exit; }
-@media (min-width: 901px) and (max-width: 2000px) { .workbench:has(.canvas-left-panel):has(.right-panel) .bottom-tools { bottom: 80px; transform: translateX(-50%); } }
-@media (min-width: 901px) and (max-width: 1300px) { .workbench:has(.canvas-left-panel):has(.right-panel) .bottom-tools { bottom: 144px; } }
 @media (max-width: 1300px) { .zoom-tools.with-panel { bottom: 80px; } }
 @media (max-width: 900px) { .right-panel { width: min(400px, calc(100vw - 32px)); } .element-toolbar { max-width: calc(100vw - 32px); overflow-x: auto; } .zoom-tools.with-panel { right: 16px; bottom: 80px; z-index: 10; } .bottom-tools { left: 16px; transform: none; } }
 
