@@ -5,7 +5,7 @@ import { demoNotice } from '../demo-feedback';
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { useLocale } from '../LocaleContext';
 import { usePresence } from '../usePresence';
-import { prepareMainImage } from '../asset-library';
+import { prepareMainImage, type LibraryImage } from '../asset-library';
 import type { CanvasImage } from '../useCanvas';
 import { Button, Divider, Icon, IconButton } from './ui';
 import { ProgressiveImage } from './ProgressiveImage';
@@ -60,10 +60,10 @@ const tabs = [
   { value: 'history', label: '任务', en: 'Tasks', ja: 'タスク', icon: 'generation-record-imgDefaultIcon2' },
 ] as const;
 
-export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose, records, unread, onNotify, layersDisabled = false }: {
+export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose, records, unread, uploads, onUpload, onNotify, layersDisabled = false }: {
   hasSelectedElement: boolean; layersDisabled?: boolean;
   tab: LeftPanelTab | null; onTabChange: (tab: LeftPanelTab) => void; onClose: () => void;
-  records: GenerationRecord[]; unread: boolean; onNotify: (message: string) => void;
+  records: GenerationRecord[]; unread: boolean; uploads: LibraryImage[]; onUpload: (image: LibraryImage) => void; onNotify: (message: string) => void;
 }) {
   const { t, locale } = useLocale();
   const shown = usePresence(tab);
@@ -146,7 +146,7 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
       </div>
     </aside>}
     {shownPreview.value && <FullImageViewer image={shownPreview.value.image} images={shownPreview.value.record.images.map((item, index) => ({ url: item.url, name: `${t(shownPreview.value!.record.title)} ${index + 1}` }))} selectedIndex={shownPreview.value.index} onSelect={index => void openImage(shownPreview.value!.record, index)} locale={locale} phase={shownPreview.phase} onClose={() => { previewRequest.current++; setPreview(null); }} details={<TaskDetailPanel record={shownPreview.value.record} selectedIndex={shownPreview.value.index} active={shownPreview.phase !== 'exit'} onSelect={index => void openImage(shownPreview.value!.record, index)} onLibrary={() => setLibraryOpen(true)} onSave={(anchor, content) => setSaveTarget({ anchor, content })} onCopy={text => void copyPrompt(text)} onNotify={onNotify} />} />}
-    {library.value && createPortal(<PromptLibrary phase={library.phase} entries={entries} onStore={store} onNotify={onNotify} onClose={() => setLibraryOpen(false)} />, document.body)}
+    {library.value && createPortal(<PromptLibrary phase={library.phase} entries={entries} uploads={uploads} onUpload={onUpload} onStore={store} onNotify={onNotify} onClose={() => setLibraryOpen(false)} />, document.body)}
     {shownSave.value && createPortal(<SavePrompt anchor={shownSave.value.anchor} phase={shownSave.phase} onClose={() => setSaveTarget(null)} onSave={async name => {
       const result = await store([{ id: crypto.randomUUID(), name, content: shownSave.value!.content }, ...entries]);
       if (result.ok) { setSaveTarget(null); onNotify('提示词已保存'); } else { onNotify(result.message); }
