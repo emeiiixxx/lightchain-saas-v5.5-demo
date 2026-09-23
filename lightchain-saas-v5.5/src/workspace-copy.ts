@@ -1,5 +1,6 @@
 // Workspace copy: Simplified Chinese key, English, Japanese.
 export const workspaceCopy: Record<string, readonly [string, string]> = {
+'仅 Demo 演示，线上功能无需修改': ['Demo only; no changes to the live feature are needed.', 'デモ用です。公開中の機能は変更不要です。'],
 '编辑蒙版': ["Edit mask", "マスクを編集"],
 '示例服装': ["Sample garment", "サンプル衣服"],
 '智能识别': ["Auto-detect", "自動認識"],

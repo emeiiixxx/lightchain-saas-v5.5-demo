@@ -12,6 +12,7 @@
   display: flex; align-items: center; gap: var(--spacing-base);
   font-size: 16px; line-height: 24px; font-weight: 500;
 }
+.print-placement-demo-note { margin-left: var(--spacing-base); color: var(--text-tertiary); font-size: 12px; line-height: 16px; font-weight: 400; white-space: nowrap; }
 .print-placement-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 360px; height: calc(100% - 64px); min-height: 0; }
 .print-placement-stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; border-right: 1px solid var(--border-weak); }
 .print-placement-checker {
@@ -42,6 +43,7 @@
 }
 @media (max-width: 760px) {
   .lc-dialog.print-placement-dialog { width: calc(100vw - 24px); height: calc(100dvh - 24px); }
+  .print-placement-demo-note { max-width: 180px; white-space: normal; }
   .print-placement-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
   .print-placement-sidebar { grid-column: 1 / -1; max-height: 200px; }
   .print-placement-instructions { padding: var(--spacing-xl); }

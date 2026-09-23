@@ -33,7 +33,7 @@ export function PrintPlacementDialog({ source, draft, phase, onClose, onConfirm,
   const previewOnly = () => onNotify(demoNotice(locale));
   const reset = () => { setScale(50); if (repeat) setRecognition('idle'); };
   const leftTitle = repeat ? '编辑蒙版' : '印花图';
-  return <Dialog className="print-placement-dialog" title={<><Icon name={repeat ? 'print-seamless-repeat' : 'print-target-position-linear'} size={20} /><span>{t(repeat ? '满印' : '指定位置')}</span></>} phase={phase} onClose={onClose}>
+  return <Dialog className="print-placement-dialog" title={<><Icon name={repeat ? 'print-seamless-repeat' : 'print-target-position-linear'} size={20} /><span>{t(repeat ? '满印' : '指定位置')}</span><span className="print-placement-demo-note">{t('仅 Demo 演示，线上功能无需修改')}</span></>} phase={phase} onClose={onClose}>
     <div className="print-placement-body">
       <section className="print-placement-stage" aria-label={t(leftTitle)}>
         <div className="print-placement-checker" aria-hidden="true" />
