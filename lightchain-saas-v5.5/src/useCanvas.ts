@@ -559,7 +559,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
         ctx.fillRect(0, 0, size.width, size.height); ctx.restore();
       }
       ctx.save(); ctx.translate(camera.x, camera.y); ctx.scale(camera.zoom, camera.zoom);
-      paintCanvasImage(ctx, editingImage, camera.zoom, palette); ctx.restore();
+      paintCanvasImage(ctx, editingImage, palette); ctx.restore();
     } else {
       isolationCache.current?.dispose(); isolationCache.current = null;
       paintCanvasScene(ctx, images, camera, size, palette);

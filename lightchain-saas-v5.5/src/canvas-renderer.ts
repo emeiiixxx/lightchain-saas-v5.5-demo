@@ -6,15 +6,15 @@ type Camera = { x: number; y: number; zoom: number };
 type Viewport = { width: number; height: number };
 export type CanvasPalette = { background: string; surface: string; text: string; track: string; progress: string; loadingLabel: string; badgeBackground: string; badgeText: string; coverId?: string; coverLabel: string; vectorLabel: string; fontFamily: string };
 
-function paintImageBadges(ctx: CanvasRenderingContext2D, img: CanvasImage, zoom: number, palette: CanvasPalette) {
+function paintImageBadges(ctx: CanvasRenderingContext2D, img: CanvasImage, palette: CanvasPalette) {
   const vector = img.mimeType === 'image/svg+xml' || /\.svg(?:[?#]|$)/i.test(img.name) || /\.svg(?:[?#]|$)|^data:image\/svg\+xml/i.test(img.url);
   const labels = [...(img.id === palette.coverId ? [palette.coverLabel] : []), ...(vector ? [palette.vectorLabel] : [])];
   if (!labels.length) return;
-  // Figma 139:6732: fixed-size metadata inside the image's top-left corner.
+  // Figma 139:6732: metadata in image coordinates inherits canvas zoom.
   // Painting in image order preserves occlusion and edit isolation.
   ctx.save(); ctx.globalAlpha = 1;
   ctx.beginPath(); ctx.rect(-img.width / 2, -img.height / 2, img.width, img.height); ctx.clip();
-  ctx.translate(-img.width / 2, -img.height / 2); ctx.scale(1 / zoom, 1 / zoom);
+  ctx.translate(-img.width / 2, -img.height / 2);
   ctx.font = `400 12px ${palette.fontFamily}`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   let left = 4;
@@ -36,7 +36,7 @@ function visible(image: CanvasImage, camera: Camera, viewport: Viewport) {
 }
 
 // Shared native-size image painter; isolation never changes individual alpha values.
-export function paintCanvasImage(ctx: CanvasRenderingContext2D, img: CanvasImage, zoom: number, palette: CanvasPalette) {
+export function paintCanvasImage(ctx: CanvasRenderingContext2D, img: CanvasImage, palette: CanvasPalette) {
   if (img.generating || !img.image.complete || !img.image.naturalWidth) return;
   ctx.save();
   ctx.translate(img.x + img.width / 2, img.y + img.height / 2);
@@ -60,7 +60,7 @@ export function paintCanvasImage(ctx: CanvasRenderingContext2D, img: CanvasImage
     ctx.setLineDash(img.strokeStyle === 'dashed' ? [sw * 4, sw * 3] : img.strokeStyle === 'dotted' ? [sw, sw * 2] : []);
     ctx.beginPath(); ctx.roundRect(x + offset, y + offset, Math.max(1, img.width - offset * 2), Math.max(1, img.height - offset * 2), Math.max(0, radius - offset)); ctx.stroke();
   }
-  paintImageBadges(ctx, img, zoom, palette);
+  paintImageBadges(ctx, img, palette);
   ctx.restore();
 }
 
@@ -84,7 +84,7 @@ export function paintCanvasScene(ctx: CanvasRenderingContext2D, images: CanvasIm
   for (const image of images) {
     if (image.id === excludedId || !visible(image, camera, viewport)) continue;
     if (image.generating) { if (includePending) paintPendingTile(ctx, image, camera.zoom, palette); }
-    else paintCanvasImage(ctx, image, camera.zoom, palette);
+    else paintCanvasImage(ctx, image, palette);
   }
   ctx.restore();
 }
