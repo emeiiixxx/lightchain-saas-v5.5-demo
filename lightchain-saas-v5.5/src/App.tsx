@@ -38,7 +38,7 @@ export default function App() {
   const chooseFiles = () => { replaceTarget.current = null; setModal('upload'); };
   const replaceImage = () => { replaceTarget.current = board.selected; setModal('upload'); };
   const confirmImages = (items: Omit<CanvasImage, 'x' | 'y'>[]) => {
-    if (replaceTarget.current && items[0]) { const item = items[0]; board.updateSelected({ image: item.image, url: item.url, name: item.name }); }
+    if (replaceTarget.current && items[0]) { const item = items[0]; board.updateSelected({ image: item.image, url: item.url, name: item.name, mimeType: item.mimeType }); }
     else board.addImages(items);
     setModal(null);
   };

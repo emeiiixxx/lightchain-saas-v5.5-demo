@@ -9,6 +9,6 @@ export async function readImage(file: File): Promise<Omit<CanvasImage, 'x' | 'y'
     const image = new Image(); image.src = url; await image.decode();
     rememberImagePreview(url, image);
     const width = Math.min(320, image.naturalWidth);
-    return { id: crypto.randomUUID(), name: file.name, url, width, height: width * image.naturalHeight / image.naturalWidth, image };
+    return { id: crypto.randomUUID(), name: file.name, mimeType: file.type, url, width, height: width * image.naturalHeight / image.naturalWidth, image };
   } catch (error) { URL.revokeObjectURL(url); throw error; }
 }

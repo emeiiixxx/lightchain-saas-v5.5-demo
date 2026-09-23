@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { expandGroups, imageBounds, selectionBounds, type Alignment, type Bounds } from './canvas-selection';
 import { intersectsViewport, screenBounds } from './canvas-toolbar';
 
-export type CanvasImage = { id: string; name: string; image: HTMLImageElement; url: string; x: number; y: number; width: number; height: number; addedAt?: number; generationParentId?: string; generationRootId?: string; generationRootAddedAt?: number; generationBatchId?: string; generationIndex?: number; groupId?: string; groupedAt?: number; generating?: boolean; fit?: 'cover'; rotation?: number; radius?: number; opacity?: number; flipX?: boolean; flipY?: boolean; stroke?: string; strokeWidth?: number; strokeOpacity?: number; strokeStyle?: 'solid' | 'dashed' | 'dotted'; strokeAlign?: 'inside' | 'center' | 'outside'; favorite?: boolean; cover?: boolean };
+export type CanvasImage = { id: string; name: string; image: HTMLImageElement; url: string; mimeType?: string; x: number; y: number; width: number; height: number; addedAt?: number; generationParentId?: string; generationRootId?: string; generationRootAddedAt?: number; generationBatchId?: string; generationIndex?: number; groupId?: string; groupedAt?: number; generating?: boolean; fit?: 'cover'; rotation?: number; radius?: number; opacity?: number; flipX?: boolean; flipY?: boolean; stroke?: string; strokeWidth?: number; strokeOpacity?: number; strokeStyle?: 'solid' | 'dashed' | 'dotted'; strokeAlign?: 'inside' | 'center' | 'outside'; favorite?: boolean; cover?: boolean };
 type Camera = { x: number; y: number; zoom: number };
 type Point = { x: number; y: number };
 function movableImageAt(images: CanvasImage[], point: Point, camera: Camera) {
@@ -491,7 +491,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     if (!accepted.length) return;
     const results = await Promise.allSettled(accepted.map(file => new Promise<Omit<CanvasImage, 'x' | 'y'>>((resolve, reject) => {
       const url = URL.createObjectURL(file), image = new Image(); urls.current.push(url);
-      image.onload = () => { const ratio = Math.min(1, 400 / Math.max(image.naturalWidth, image.naturalHeight)); resolve({ id: crypto.randomUUID(), name: file.name, image, url, width: image.naturalWidth * ratio, height: image.naturalHeight * ratio }); };
+      image.onload = () => { const ratio = Math.min(1, 400 / Math.max(image.naturalWidth, image.naturalHeight)); resolve({ id: crypto.randomUUID(), name: file.name, mimeType: file.type, image, url, width: image.naturalWidth * ratio, height: image.naturalHeight * ratio }); };
       image.onerror = reject; image.src = url;
     })));
     const loaded = results.flatMap(r => r.status === 'fulfilled' ? [r.value] : []);
@@ -531,6 +531,11 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
       track: style.getPropertyValue('--border-strong').trim(),
       progress: style.getPropertyValue('--brand-primary-hover').trim(),
       loadingLabel: locale === 'en' ? 'Generating...' : '\u751f\u6210\u4e2d...',
+      badgeBackground: style.getPropertyValue('--surface-floating-strong').trim(),
+      badgeText: style.getPropertyValue('--text-on-brand-white').trim(),
+      coverLabel: locale === 'en' ? 'Cover' : locale === 'ja' ? 'カバー' : '封面',
+      vectorLabel: locale === 'en' ? 'Vector' : locale === 'ja' ? 'ベクター' : '矢量图',
+      fontFamily: getComputedStyle(document.body).fontFamily,
     };
     ctx.fillStyle = palette.background; ctx.fillRect(0, 0, size.width, size.height);
     const editingImage = isolation.amount > 0 ? images.find(image => image.id === isolation.id && !image.generating) : undefined;
@@ -547,7 +552,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
         ctx.fillRect(0, 0, size.width, size.height); ctx.restore();
       }
       ctx.save(); ctx.translate(camera.x, camera.y); ctx.scale(camera.zoom, camera.zoom);
-      paintCanvasImage(ctx, editingImage); ctx.restore();
+      paintCanvasImage(ctx, editingImage, camera.zoom, palette); ctx.restore();
     } else {
       isolationCache.current?.dispose(); isolationCache.current = null;
       paintCanvasScene(ctx, images, camera, size, palette);

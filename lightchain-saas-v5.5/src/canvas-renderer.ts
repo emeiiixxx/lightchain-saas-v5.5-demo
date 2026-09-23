@@ -4,7 +4,29 @@ import { intersectsViewport, screenBounds } from './canvas-toolbar';
 
 type Camera = { x: number; y: number; zoom: number };
 type Viewport = { width: number; height: number };
-export type CanvasPalette = { background: string; surface: string; text: string; track: string; progress: string; loadingLabel: string };
+export type CanvasPalette = { background: string; surface: string; text: string; track: string; progress: string; loadingLabel: string; badgeBackground: string; badgeText: string; coverLabel: string; vectorLabel: string; fontFamily: string };
+
+function paintImageBadges(ctx: CanvasRenderingContext2D, img: CanvasImage, zoom: number, palette: CanvasPalette) {
+  const vector = img.mimeType === 'image/svg+xml' || /\.svg(?:[?#]|$)/i.test(img.name) || /\.svg(?:[?#]|$)|^data:image\/svg\+xml/i.test(img.url);
+  const labels = [...(img.cover ? [palette.coverLabel] : []), ...(vector ? [palette.vectorLabel] : [])];
+  if (!labels.length) return;
+  // Figma 139:6732: fixed-size metadata inside the image's top-left corner.
+  // Painting in image order preserves occlusion and edit isolation.
+  ctx.save(); ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.rect(-img.width / 2, -img.height / 2, img.width, img.height); ctx.clip();
+  ctx.translate(-img.width / 2, -img.height / 2); ctx.scale(1 / zoom, 1 / zoom);
+  ctx.font = `400 12px ${palette.fontFamily}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  let left = 4;
+  for (const label of labels) {
+    const width = Math.ceil(ctx.measureText(label).width) + 8;
+    ctx.fillStyle = palette.badgeBackground;
+    ctx.beginPath(); ctx.roundRect(left, 4, width, 20, 4); ctx.fill();
+    ctx.fillStyle = palette.badgeText; ctx.fillText(label, left + 4, 14);
+    left += width + 4;
+  }
+  ctx.restore();
+}
 
 function visible(image: CanvasImage, camera: Camera, viewport: Viewport) {
   const box = imageBounds(image);
@@ -14,7 +36,7 @@ function visible(image: CanvasImage, camera: Camera, viewport: Viewport) {
 }
 
 // Shared native-size image painter; isolation never changes individual alpha values.
-export function paintCanvasImage(ctx: CanvasRenderingContext2D, img: CanvasImage) {
+export function paintCanvasImage(ctx: CanvasRenderingContext2D, img: CanvasImage, zoom: number, palette: CanvasPalette) {
   if (img.generating || !img.image.complete || !img.image.naturalWidth) return;
   ctx.save();
   ctx.translate(img.x + img.width / 2, img.y + img.height / 2);
@@ -38,6 +60,7 @@ export function paintCanvasImage(ctx: CanvasRenderingContext2D, img: CanvasImage
     ctx.setLineDash(img.strokeStyle === 'dashed' ? [sw * 4, sw * 3] : img.strokeStyle === 'dotted' ? [sw, sw * 2] : []);
     ctx.beginPath(); ctx.roundRect(x + offset, y + offset, Math.max(1, img.width - offset * 2), Math.max(1, img.height - offset * 2), Math.max(0, radius - offset)); ctx.stroke();
   }
+  paintImageBadges(ctx, img, zoom, palette);
   ctx.restore();
 }
 
@@ -61,7 +84,7 @@ export function paintCanvasScene(ctx: CanvasRenderingContext2D, images: CanvasIm
   for (const image of images) {
     if (image.id === excludedId || !visible(image, camera, viewport)) continue;
     if (image.generating) { if (includePending) paintPendingTile(ctx, image, camera.zoom, palette); }
-    else paintCanvasImage(ctx, image);
+    else paintCanvasImage(ctx, image, camera.zoom, palette);
   }
   ctx.restore();
 }
@@ -80,7 +103,8 @@ export class CanvasIsolationCache {
     const scale = Math.min(dpr, 2, Math.sqrt(MAX_PIXELS / viewport.width / viewport.height), MAX_EDGE / viewport.width, MAX_EDGE / viewport.height);
     const width = Math.max(1, Math.floor(viewport.width * scale)), height = Math.max(1, Math.floor(viewport.height * scale));
     const key = this.key;
-    if (key && key.images === images && key.id === id && key.camera.x === camera.x && key.camera.y === camera.y && key.camera.zoom === camera.zoom && key.viewport.width === viewport.width && key.viewport.height === viewport.height && key.width === width && key.height === height && key.theme === theme && key.label === palette.loadingLabel) return this.canvas;
+    const label = [palette.loadingLabel, palette.coverLabel, palette.vectorLabel].join('|');
+    if (key && key.images === images && key.id === id && key.camera.x === camera.x && key.camera.y === camera.y && key.camera.zoom === camera.zoom && key.viewport.width === viewport.width && key.viewport.height === viewport.height && key.width === width && key.height === height && key.theme === theme && key.label === label) return this.canvas;
     try {
       const canvas = this.canvas ??= document.createElement('canvas');
       if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
@@ -89,7 +113,7 @@ export class CanvasIsolationCache {
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, width, height);
       ctx.setTransform(width / viewport.width, 0, 0, height / viewport.height, 0, 0);
       paintCanvasScene(ctx, images, camera, viewport, palette, id, true);
-      this.key = { images, id, camera: { ...camera }, viewport: { ...viewport }, width, height, theme, label: palette.loadingLabel };
+      this.key = { images, id, camera: { ...camera }, viewport: { ...viewport }, width, height, theme, label };
       return canvas;
     } catch {
       this.dispose(); this.unavailable = true;
