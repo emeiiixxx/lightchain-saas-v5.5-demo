@@ -19,7 +19,7 @@ export function MultiSelectionControls({ board, onNotify }: { board: Board; onNo
   const items = board.images.filter(item => board.selectedIds.includes(item.id));
   const bounds = selectionBounds(items);
   const [transformFrame, setTransformFrame] = useState<Frame | null>(null);
-  const frame = transformFrame ?? bounds;
+  const frame: Frame = transformFrame ?? bounds;
   const drag = useRef<Drag | null>(null);
   const toolbar = useRef<HTMLDivElement>(null);
   const [toolbarSize, setToolbarSize] = useState({ width: 280, height: 42 });

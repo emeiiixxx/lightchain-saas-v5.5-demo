@@ -33,7 +33,10 @@ export async function downloadSelection(items: CanvasImage[], format: DownloadFo
   }
   const end = new Uint8Array(22), e = new DataView(end.buffer);
   e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, centralSize, true); e.setUint32(16, offset, true);
-  const url = URL.createObjectURL(new Blob([...local, ...central, end], { type: 'application/zip' }));
+  const zip = new Uint8Array(offset + centralSize + end.length);
+  let position = 0;
+  for (const part of [...local, ...central, end]) { zip.set(part, position); position += part.length; }
+  const url = URL.createObjectURL(new Blob([zip.buffer], { type: 'application/zip' }));
   const link = document.createElement('a'); link.href = url; link.download = 'Lightchain-images.zip'; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
