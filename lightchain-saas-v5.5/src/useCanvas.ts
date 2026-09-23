@@ -539,7 +539,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
       loadingLabel: locale === 'en' ? 'Generating...' : '\u751f\u6210\u4e2d...',
       badgeBackground: style.getPropertyValue('--surface-floating-strong').trim(),
       badgeText: style.getPropertyValue('--text-on-brand-white').trim(),
-      coverId: projectCover?.id,
+      coverId: projectCover?.cover ? projectCover.id : undefined,
       coverLabel: locale === 'en' ? 'Cover' : locale === 'ja' ? 'カバー' : '封面',
       vectorLabel: locale === 'en' ? 'Vector' : locale === 'ja' ? 'ベクター' : '矢量图',
       fontFamily: getComputedStyle(document.body).fontFamily,
