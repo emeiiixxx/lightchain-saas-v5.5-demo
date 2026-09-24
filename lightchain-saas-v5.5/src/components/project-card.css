@@ -3,6 +3,7 @@
 .project-card-more { position: absolute; top: 8px; right: 8px; opacity: 0; pointer-events: none; }
 .project-card:is(:hover, :focus-within, [data-menu-open='true']) .project-card-more { opacity: 1; pointer-events: auto; }
 .project-card-menu { inset: auto; margin: 0; width: max-content; min-width: 160px; }
+.project-card-menu > .lc-button { justify-content: flex-start; text-align: left; }
 @media (hover: none) { .project-card-more { opacity: 1; pointer-events: auto; } }
 .project-card-preview { display: block; width: 100%; aspect-ratio: 225.3333 / 136; flex: none; padding: 0; border: 0; overflow: hidden; background: var(--surface-secondary); cursor: pointer; }
 .project-card-preview:focus-visible { outline-offset: -3px; }

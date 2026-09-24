@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useLocale } from '../LocaleContext';
 import { usePresence } from '../usePresence';
 import { ProgressiveImage } from './ProgressiveImage';
-import { Button, IconButton } from './ui';
+import { Button, Icon, IconButton } from './ui';
 import './project-card.css';
 
 type Props = {
@@ -87,10 +87,10 @@ export function ProjectCard({ name, coverUrl, updatedAt, onNameChange, onOpen, o
       items[next]?.focus();
     }}>
       {[
-        ['置顶', 'Pin', 'ピン留め'],
-        ['保存至资源库', 'Save to asset library', 'ライブラリに保存'],
-        ['删除', 'Delete', '削除'],
-      ].map(([zh, en, ja]) => <Button key={zh} role="menuitem" onClick={() => { setMenuOpen(false); trigger.current?.querySelector('button')?.focus(); onMoreAction(); }}>{locale === 'en' ? en : locale === 'ja' ? ja : zh}</Button>)}
+        ['置顶', 'Pin', 'ピン留め', 'library-promptPin'],
+        ['保存至资源库', 'Save to asset library', 'ライブラリに保存', 'asset-center'],
+        ['删除', 'Delete', '削除', 'task-record-delete'],
+      ].map(([zh, en, ja, icon]) => <Button key={zh} role="menuitem" onClick={() => { setMenuOpen(false); trigger.current?.querySelector('button')?.focus(); onMoreAction(); }}><Icon name={icon} size={20} /><span>{locale === 'en' ? en : locale === 'ja' ? ja : zh}</span></Button>)}
     </div>}
   </article>;
 }
