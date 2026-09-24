@@ -163,7 +163,7 @@ export const workspaceCopy: Record<string, readonly [string, string]> = {
 '当前 Demo 的图片仅保留在本次打开的页面中。': ['Demo images are kept only for the current page session.', 'デモの画像は現在のページを開いている間のみ保持されます。'],
 '当前为设计生产工作台 Demo，暂未接入在线客服。': ['This workspace demo is not connected to live support.', 'このワークスペースのデモはオンラインサポートに未接続です。'],
 '演示账户可用积分': ['Available demo credits', 'デモアカウントの利用可能クレジット'], '当前 Demo 暂未接入积分购买。': ['Credit purchases are not available in this demo.', 'このデモではクレジットを購入できません。'],
-'选择画布中的图片，查看图层属性': ['Select an image to view layer properties', 'キャンバスの画像を選択してレイヤーのプロパティを表示'],
+'请先选择图层': ['Please select a layer first', '先にレイヤーを選択してください'],
 '图片': ['Image', '画像'], '替换图片': ['Replace image', '画像を置換'], '局部编辑': ['Edit area', '部分編集'], '转3D平铺': ['3D flat lay', '3D平置きに変換'], '图片编辑': ['Edit image', '画像編集'],
 '基础参数': ['Basic properties', '基本設定'], '位置': ['Position', '位置'], '横坐标': ['X position', 'X座標'], '纵坐标': ['Y position', 'Y座標'],
 '尺寸': ['Size', 'サイズ'], '宽度': ['Width', '幅'], '高度': ['Height', '高さ'], '变换': ['Transform', '変形'], '旋转角度': ['Rotation', '回転角度'],
