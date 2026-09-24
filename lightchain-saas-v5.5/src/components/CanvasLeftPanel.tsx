@@ -7,17 +7,20 @@ import { useLocale } from '../LocaleContext';
 import { usePresence } from '../usePresence';
 import { prepareMainImage, type LibraryImage } from '../asset-library';
 import type { CanvasImage } from '../useCanvas';
-import { Button, Divider, Icon, IconButton } from './ui';
+import { Button, Dialog, Divider, Icon, IconButton } from './ui';
 import { ProgressiveImage } from './ProgressiveImage';
 import { GeneratingPlaceholder } from './GeneratingPlaceholder';
 import { FullImageViewer } from './FullImageViewer';
 import { createPortal } from 'react-dom';
 import { PromptLibrary, SavePrompt } from './PromptLibrary';
 import { useSavedPrompts } from '../useSavedPrompts';
+import { TaskRecordMoreMenu } from './TaskRecordMoreMenu';
+import { downloadRecordGroup } from '../download-record-group';
 
 export type LeftPanelTab = 'layers' | 'assets' | 'history';
 export type GenerationRecord = {
   supportsPrompt?: boolean; printMode?: 'position' | 'repeat';
+  sourceId?: string;
   id: string; title: string; time: string; prompt?: string; pending?: boolean; generating?: boolean; failed?: boolean; ratio?: string; resolution?: string;
   tags: { label: string; image?: string }[];
   count?: number;
@@ -60,10 +63,11 @@ const tabs = [
   { value: 'history', label: '任务', en: 'Tasks', ja: 'タスク', icon: 'generation-record-imgDefaultIcon2' },
 ] as const;
 
-export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose, records, unread, uploads, onUpload, onNotify, layersDisabled = false }: {
+export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose, records, unread, uploads, onUpload, onNotify, onRegenerate, onDeleteRecord, layersDisabled = false }: {
   hasSelectedElement: boolean; layersDisabled?: boolean;
   tab: LeftPanelTab | null; onTabChange: (tab: LeftPanelTab) => void; onClose: () => void;
   records: GenerationRecord[]; unread: boolean; uploads: LibraryImage[]; onUpload: (image: LibraryImage) => void; onNotify: (message: string) => void;
+  onRegenerate: (record: GenerationRecord) => void; onDeleteRecord: (id: string) => void;
 }) {
   const { t, locale } = useLocale();
   const shown = usePresence(tab);
@@ -77,6 +81,9 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
   const [preview, setPreview] = useState<{ image: CanvasImage; record: GenerationRecord; index: number } | null>(null);
   const shownPreview = usePresence(preview);
   const previewRequest = useRef(0);
+  const [deletedDemoIds, setDeletedDemoIds] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<GenerationRecord | null>(null);
+  const shownDelete = usePresence(deleteTarget);
   useLayoutEffect(() => {
     const element = switcher.current;
     if (!element) return;
@@ -103,7 +110,16 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
       if (request === previewRequest.current) setPreview({ image: { ...image, x: 0, y: 0 }, record, index });
     } catch { if (request === previewRequest.current) onNotify('图片加载失败，请重试'); }
   };
-  const allRecords = [...records, ...demoRecords, ...additionalDemoRecords];
+  const allRecords = [...records, ...demoRecords, ...additionalDemoRecords].filter(record => !deletedDemoIds.includes(record.id));
+  const deleteRecord = (record: GenerationRecord) => {
+    if (record.id.startsWith('figma-') || record.id.startsWith('demo-record-')) setDeletedDemoIds(previous => [...previous, record.id]);
+    else onDeleteRecord(record.id);
+    if (preview?.record.id === record.id) { previewRequest.current++; setPreview(null); }
+  };
+  const downloadGroup = async (record: GenerationRecord) => {
+    try { await downloadRecordGroup(record.images, t(record.title)); }
+    catch { onNotify(t('下载失败，请重试。')); }
+  };
   return <>
     {shown.value && <aside id="canvas-left-sidebar" className="canvas-left-panel" aria-label={t(tabs.find(item => item.value === shown.value)!.label)} data-canvas-ui data-node-id="66:4715" data-phase={shown.phase} inert={shown.phase === 'exit'} onKeyDown={event => { if (event.key === 'Escape' && !document.querySelector('dialog[open]')) { event.preventDefault(); event.stopPropagation(); onClose(); } }}>
       <header className="left-panel-header">
@@ -124,7 +140,7 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
         {shown.value !== 'history' ? <div className="left-panel-placeholder">{shown.value === 'layers' && !hasSelectedElement ? t('暂无图层') : demoNotice(locale)}</div> : <div className="generation-record-list">
           {allRecords.map((record, index) => <article className="generation-record" key={record.id}>
             <div className="generation-record-info">
-              <div className="generation-record-heading"><h3>{t(record.title)}</h3><time>{record.time}</time></div>
+              <div className="generation-record-heading"><div className="generation-record-heading-text"><h3>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={() => void downloadGroup(record)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget(record)} /></div>
               <GenerationRecordTags record={record} active={tab === 'history'} />
               {recordHasPrompt(record) && <div className="generation-record-prompt">
                 <p>{t(record.prompt!)}</p>
@@ -145,7 +161,8 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
         </div>}
       </div>
     </aside>}
-    {shownPreview.value && <FullImageViewer image={shownPreview.value.image} images={shownPreview.value.record.images.map((item, index) => ({ url: item.url, name: `${t(shownPreview.value!.record.title)} ${index + 1}` }))} selectedIndex={shownPreview.value.index} onSelect={index => void openImage(shownPreview.value!.record, index)} locale={locale} phase={shownPreview.phase} onClose={() => { previewRequest.current++; setPreview(null); }} details={<TaskDetailPanel record={shownPreview.value.record} selectedIndex={shownPreview.value.index} active={shownPreview.phase !== 'exit'} onSelect={index => void openImage(shownPreview.value!.record, index)} onLibrary={() => setLibraryOpen(true)} onSave={(anchor, content) => setSaveTarget({ anchor, content })} onCopy={text => void copyPrompt(text)} onNotify={onNotify} />} />}
+    {shownPreview.value && <FullImageViewer image={shownPreview.value.image} images={shownPreview.value.record.images.map((item, index) => ({ url: item.url, name: `${t(shownPreview.value!.record.title)} ${index + 1}` }))} selectedIndex={shownPreview.value.index} onSelect={index => void openImage(shownPreview.value!.record, index)} locale={locale} phase={shownPreview.phase} onClose={() => { previewRequest.current++; setPreview(null); }} details={<TaskDetailPanel record={shownPreview.value.record} selectedIndex={shownPreview.value.index} active={shownPreview.phase !== 'exit'} onSelect={index => void openImage(shownPreview.value!.record, index)} onLibrary={() => setLibraryOpen(true)} onSave={(anchor, content) => setSaveTarget({ anchor, content })} onCopy={text => void copyPrompt(text)} onNotify={onNotify} onRegenerate={() => { onRegenerate(shownPreview.value!.record); previewRequest.current++; setPreview(null); }} onDelete={() => setDeleteTarget(shownPreview.value!.record)} />} />}
+    {shownDelete.value && createPortal(<Dialog title={t('删除确认')} className="task-delete-dialog" closeIcon="task-delete-close" phase={shownDelete.phase} onClose={() => setDeleteTarget(null)}><p className="task-delete-dialog-description">{t('删除后不可恢复，是否确认删除？')}</p><footer className="task-delete-dialog-actions"><Button size="m" variant="secondary" onClick={() => setDeleteTarget(null)}>{t('取消')}</Button><Button size="m" variant="danger" onClick={() => { deleteRecord(shownDelete.value!); setDeleteTarget(null); }}>{t('确认删除')}</Button></footer></Dialog>, document.body)}
     {library.value && createPortal(<PromptLibrary phase={library.phase} entries={entries} uploads={uploads} onUpload={onUpload} onStore={store} onNotify={onNotify} onClose={() => setLibraryOpen(false)} />, document.body)}
     {shownSave.value && createPortal(<SavePrompt anchor={shownSave.value.anchor} phase={shownSave.phase} onClose={() => setSaveTarget(null)} onSave={async name => {
       const result = await store([{ id: crypto.randomUUID(), name, content: shownSave.value!.content }, ...entries]);

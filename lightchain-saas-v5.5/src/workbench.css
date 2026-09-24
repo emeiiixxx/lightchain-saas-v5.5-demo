@@ -320,9 +320,16 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 .generation-record { display: flex; flex-direction: column; gap: var(--spacing-base); }
 .generation-record:not(:last-child) { padding-bottom: var(--spacing-xl); border-bottom: 1px solid var(--border-weak); }
 .generation-record-info { display: flex; flex-direction: column; gap: 10px; }
-.generation-record-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 14px; line-height: 20px; }
+.generation-record-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; min-width: 0; font-size: 14px; line-height: 20px; }
+.generation-record-heading-text { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
 .generation-record-heading h3 { margin: 0; font: inherit; color: var(--text-secondary); }
 .generation-record-heading time { color: var(--text-tertiary); white-space: nowrap; }
+.generation-record-heading .task-record-more-anchor { flex: none; }
+.task-record-more-menu.element-design-menu { position: fixed; width: max-content; min-width: 160px; max-width: calc(100vw - 16px); padding: 8px; gap: 4px; margin: 0; }
+.task-record-more-menu.element-design-menu button { width: 100%; }
+.task-record-more-menu.element-design-menu button:disabled { opacity: .4; cursor: not-allowed; }
+.task-record-more-menu.element-design-menu::before { content: none; }
+.task-record-more-anchor > .lc-icon-button[aria-expanded='true'] { background: var(--state-hover); color: var(--text-primary); }
 .generation-record-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-xs); }
 .generation-record-tag { display: inline-flex; align-items: center; gap: var(--spacing-xs); min-height: var(--height-xl); padding: 2px var(--spacing-xs); border-radius: 6px; background: var(--state-hover); color: var(--text-secondary); font-size: 12px; line-height: 20px; font-weight: 500; }
 .generation-record-tag:not(.generation-record-tag--image):not(:has(> img)) { padding-inline: var(--spacing-base); }

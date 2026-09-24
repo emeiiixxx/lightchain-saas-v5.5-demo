@@ -32,7 +32,9 @@
 .full-image-viewer .task-detail-back { position: absolute; top: 40px; left: 40px; height: 40px; padding: 0 16px; gap: 4px; background: var(--control-fill-default); color: var(--text-secondary); }
 .task-detail-panel { position: absolute; top: 16px; right: 16px; bottom: 16px; width: 400px; display: flex; flex-direction: column; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--border-weak); border-radius: var(--radius-xl); background: var(--surface-default); color: var(--text-secondary); box-shadow: var(--shadow-l); }
 .task-detail-info { display: flex; flex: 0 0 auto; flex-direction: column; gap: 16px; padding: 24px; min-width: 0; }
-.task-detail-info > header { display: flex; flex-direction: column; gap: 4px; }
+.task-detail-info > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; min-width: 0; }
+.task-detail-heading-text { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }
+.task-detail-regenerate { flex: none; height: 32px; min-width: 32px; padding-inline: 12px; gap: 4px; }
 .task-detail-info h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 500; overflow-wrap: anywhere; }
 .task-detail-info time { font-size: 12px; line-height: 16px; font-weight: 400; color: var(--text-tertiary); }
 .task-detail-thumbnails { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -46,10 +48,10 @@
 .task-detail-prompt > p { margin: 0; font-size: 14px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .task-detail-prompt .generation-record-actions { flex-wrap: wrap; }
 .task-detail-actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-xl); padding: 8px 24px; border-top: 1px solid var(--border-weak); }
-.task-detail-actions > .lc-button, .task-detail-actions :is(.element-send-with-label, .task-download-control) > .lc-button { width: auto; height: 32px; min-width: 32px; padding: 0; border: 0; gap: 4px; font-size: 12px; line-height: 20px; font-weight: 500; color: var(--text-tertiary); }
-.task-detail-actions > :is(.element-send-with-label, .task-download-control) { display: inline-flex; flex: none; }
+.task-detail-actions > .lc-button, .task-detail-actions :is(.element-send-with-label, .task-download-control, .task-record-more-anchor) > .lc-button { width: auto; height: 32px; min-width: 32px; padding: 0; border: 0; gap: 4px; font-size: 12px; line-height: 20px; font-weight: 500; color: var(--text-tertiary); }
+.task-detail-actions > :is(.element-send-with-label, .task-download-control, .task-record-more-anchor) { display: inline-flex; flex: none; }
 .task-detail-actions > .lc-button:is(:hover, :focus-visible, :active):not(:disabled),
-.task-detail-actions :is(.element-send-with-label, .task-download-control) > .lc-button:is(:hover, :focus-visible, :active, [aria-expanded='true']):not(:disabled) { background: transparent; color: var(--text-primary); }
+.task-detail-actions :is(.element-send-with-label, .task-download-control, .task-record-more-anchor) > .lc-button:is(:hover, :focus-visible, :active, [aria-expanded='true']):not(:disabled) { background: transparent; color: var(--text-primary); }
 .task-detail-actions .divider--vertical { height: 16px; }
 @media (max-width: 1100px) {
   .task-detail-panel { width: 320px; }

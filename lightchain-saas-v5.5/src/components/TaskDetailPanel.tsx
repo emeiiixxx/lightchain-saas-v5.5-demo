@@ -9,14 +9,16 @@ import { Button, Divider, Icon } from './ui';
 import { ProgressiveImage } from './ProgressiveImage';
 import { GenerationRecordTags } from './GenerationRecordTags';
 import { ElementSendMenu } from './ElementSendMenu';
+import { TaskRecordMoreMenu } from './TaskRecordMoreMenu';
 
 type Props = {
   record: GenerationRecord; selectedIndex: number; active: boolean;
   onSelect: (index: number) => void; onLibrary: () => void;
   onSave: (anchor: HTMLElement, content: string) => void;
   onCopy: (text: string) => void; onNotify: (text: string) => void;
+  onRegenerate: () => void; onDelete: () => void;
 };
-export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLibrary, onSave, onCopy, onNotify }: Props) {
+export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLibrary, onSave, onCopy, onNotify, onRegenerate, onDelete }: Props) {
   const { t, locale } = useLocale();
   const [sendOpen, setSendOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -42,7 +44,7 @@ export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLib
   };
   return <aside className="task-detail-panel" data-task-controls aria-label={locale === 'en' ? 'Task details' : locale === 'ja' ? 'タスク詳細' : '任务详情'}>
     <div className="task-detail-info">
-      <header><h2>{t(record.title)}</h2><time>{record.time}</time></header>
+      <header><div className="task-detail-heading-text"><h2>{t(record.title)}</h2><time>{record.time}</time></div><Button className="task-detail-regenerate" variant="outline" size="s" disabled={record.generating || record.pending} onClick={onRegenerate}><Icon name="task-record-regenerate-small" size={16} />{t('再次生成')}</Button></header>
       <nav className="task-detail-thumbnails" aria-label={t('图片缩略图')}>
         {record.images.map((image, index) => <button type="button" key={`${image.url}-${index}`} aria-label={`${t('查看大图')} · ${index + 1}`} aria-current={index === selectedIndex ? 'true' : undefined} onClick={() => onSelect(index)} onKeyDown={event => {
           if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
@@ -65,7 +67,8 @@ export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLib
     <div className="task-detail-actions">
       <ElementSendMenu withLabel open={sendOpen} onToggle={() => { setDownloadOpen(false); setSendOpen(value => !value); }} onClose={() => setSendOpen(false)} onSend={unavailable} /><Divider vertical />
       <Button size="s" onClick={unavailable}><Icon name="asset-center" size={16} />{locale === 'en' ? 'Save to assets' : locale === 'ja' ? 'アセットに保存' : '收藏至资源库'}</Button><Divider vertical />
-      <DownloadFormatMenu open={downloadOpen} disabled={downloading} onToggle={() => { setSendOpen(false); setDownloadOpen(value => !value); }} onClose={() => setDownloadOpen(false)} onSelect={format => void download(format)} />
+      <DownloadFormatMenu open={downloadOpen} disabled={downloading} onToggle={() => { setSendOpen(false); setDownloadOpen(value => !value); }} onClose={() => setDownloadOpen(false)} onSelect={format => void download(format)} /><Divider vertical />
+      <TaskRecordMoreMenu detail onDelete={onDelete} />
     </div>
   </aside>;
 }
