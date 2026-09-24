@@ -61,7 +61,7 @@ export function ProjectCard({ name, coverUrl, updatedAt, onNameChange, onOpen, o
     : locale === 'en' ? `Edited ${ago}` : locale === 'ja' ? `${ago}に更新` : `${ago}修改`;
   return <article className="project-card" data-node-id="150:8933" data-hover-node-id="150:8966" data-menu-open={menuOpen}>
     <button type="button" className="project-card-preview" aria-label={`${t('返回画布')} · ${name}`} onClick={onOpen}>
-      {coverUrl && <ProgressiveImage src={coverUrl} alt={t('项目封面')} fit="cover" eager />}
+      {coverUrl ? <ProgressiveImage src={coverUrl} alt={t('项目封面')} fit="cover" eager /> : <img className="project-card-default-cover" src="/assets/project-default-cover.png" alt={t('项目封面')} width={56} height={56} />}
     </button>
     <div className="project-card-info">
       <input className="project-card-name" aria-label={t('项目名称')} placeholder={t('重命名项目')} title={name} value={name} maxLength={80} onChange={event => onNameChange(event.target.value)} onBlur={event => onNameChange(event.currentTarget.value.trim() || 'Untitle')} onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) event.currentTarget.blur(); }} />

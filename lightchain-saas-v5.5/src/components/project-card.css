@@ -5,7 +5,8 @@
 .project-card-menu { inset: auto; margin: 0; width: max-content; min-width: 160px; }
 .project-card-menu > .lc-button { justify-content: flex-start; text-align: left; }
 @media (hover: none) { .project-card-more { opacity: 1; pointer-events: auto; } }
-.project-card-preview { display: block; width: 100%; aspect-ratio: 225.3333 / 136; flex: none; padding: 0; border: 0; overflow: hidden; background: var(--surface-secondary); cursor: pointer; }
+.project-card-preview { display: grid; place-items: center; width: 100%; aspect-ratio: 225.3333 / 136; flex: none; padding: 0; border: 0; overflow: hidden; background: var(--surface-secondary); cursor: pointer; }
+.project-card-default-cover { display: block; width: 56px; height: 56px; object-fit: contain; }
 .project-card-preview:focus-visible { outline-offset: -3px; }
 .project-card-info { display: flex; flex-direction: column; align-items: stretch; flex: none; gap: var(--spacing-xs); height: 64px; padding: var(--spacing-base); overflow: hidden; }
 .project-card-name { width: 100%; min-width: 0; height: 24px; flex: none; padding: 0 var(--spacing-base); border: 0; border-radius: var(--radius-base); background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 400; line-height: 20px; text-overflow: ellipsis; }
