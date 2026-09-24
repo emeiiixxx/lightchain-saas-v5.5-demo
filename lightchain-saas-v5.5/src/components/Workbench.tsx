@@ -4,6 +4,7 @@ import { TaskFeatureTip } from './TaskFeatureTip';
 import { DownloadFormatMenu } from './DownloadFormatMenu';
 import { ElementSendMenu } from './ElementSendMenu';
 import { demoNotice } from '../demo-feedback';
+import type { Notify } from '../notification';
 import type { LibraryImage } from '../asset-library';
 import { useLocale } from '../LocaleContext';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
@@ -25,7 +26,7 @@ import { imageBounds } from '../canvas-selection';
 import { canvasToolbarPosition, intersectsViewport, screenBounds } from '../canvas-toolbar';
 
 type Board = ReturnType<typeof useCanvas>;
-type Props = { board: Board; open: boolean; onOpenChange: (open: boolean) => void; phase: 'enter' | 'exit'; onUpload: () => void; onReplace: () => void; onHelp: () => void; onNotify: (message: string) => void; uploads: LibraryImage[]; onRememberUpload: (image: LibraryImage) => void };
+type Props = { board: Board; open: boolean; onOpenChange: (open: boolean) => void; phase: 'enter' | 'exit'; onUpload: () => void; onReplace: () => void; onHelp: () => void; onNotify: Notify; uploads: LibraryImage[]; onRememberUpload: (image: LibraryImage) => void };
 function Tool({ id, icon, label, active, onClick, disabled, size = 20, unread = false }: { id?: string; icon: string; label: string; active?: boolean; onClick: () => void; disabled?: boolean; size?: number; unread?: boolean }) {
   return <Button id={id} aria-label={label} title={label} aria-pressed={active} className={`workbench-tool ${active ? 'is-active' : ''}`} disabled={disabled} onClick={onClick}><Icon name={icon} size={size} />{unread && <span className="tool-unread-dot" aria-hidden="true" />}</Button>;
 }
@@ -37,7 +38,7 @@ function SliderField({ label, value, max, unit, brand, begin, change }: { label:
   return <div className="property-slider"><input type="range" aria-label={label} min="0" max={max} value={value} className={brand ? 'brand-range' : ''} style={{ '--range-progress': `${value / max * 100}%` } as CSSProperties} onPointerDown={begin} onKeyDown={e => { if (!e.repeat && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) begin(); }} onChange={e => change(Number(e.target.value))} /><NumberField label={`${label} ${t("数值")}`} value={value} min={0} max={max} unit={unit} begin={begin} change={change} /></div>;
 }
 
-function ImageProperties({ board, onReplace, onAction, rotationLocked, onNotify }: { board: Board; onReplace: () => void; onAction: (text: string) => void; rotationLocked: boolean; onNotify: (message: string) => void }) {
+function ImageProperties({ board, onReplace, onAction, rotationLocked, onNotify }: { board: Board; onReplace: () => void; onAction: (text: string) => void; rotationLocked: boolean; onNotify: Notify }) {
   const { t } = useLocale();
   if (board.selectedIds.length > 1) return <div className="properties-empty">{t('已选择')} {board.selectedIds.length} {t('张图片')}</div>;
   const item = board.images.find(i => i.id === board.selected);
@@ -193,7 +194,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       if (!generationMounted.current) return;
       board.finishGeneration(placeholders.map(item => item.id), null);
       setGenerationRecords(previous => previous.map(record => record.id === id ? { ...record, generating: false, failed: true } : record));
-      onNotify('图片加载失败，请重试');
+      onNotify('图片加载失败，请重试', 'error');
     } finally {
       generatingSources.current.delete(sourceId);
     }
@@ -223,7 +224,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       if (!generationMounted.current) return;
       board.finishGeneration(placeholders.map(item => item.id), null);
       setGenerationRecords(previous => previous.map(item => item.id === id ? { ...item, generating: false, failed: true } : item));
-      onNotify('图片加载失败，请重试');
+      onNotify('图片加载失败，请重试', 'error');
     }
   };
   const quickEditVisible = usePresence(quickEdit === board.selected ? quickEdit : null);
@@ -297,7 +298,12 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
   };
   const unavailable = () => onNotify(demoNotice(locale));
   const elementAction = (label: string, entry: string) => {
-    if (label === '款式' && ['局部修改', '印花上身', 'AI试衣'].includes(entry) && selected) {
+    if (label === '款式' && ['面料替换', '颜色修改', 'AI试衣', '转3D平铺', '多视角', '款式裂变'].includes(entry)) {
+      setMenu(null);
+      onNotify(t('功能无需修改，Demo 不作演示'));
+      return;
+    }
+    if (label === '款式' && ['局部修改', '印花上身'].includes(entry) && selected) {
       setMenu(null); setQuickEdit(null);
       if (leftTab === 'layers') setLeftTab('history');
       setLocalEditTool(entry as CanvasEditTool); board.setInteractionLocked(true); setLocalEdit(selected.id);
@@ -320,7 +326,11 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       <Tool icon="canvas-imgIconSystem6" label={t("资产")} size={24} onClick={() => openLeftPanel('assets')} />
       <Tool id="canvas-task-entry" icon="canvas-imgIcon2" label={t("任务")} size={24} unread={hasUnreadGeneration} onClick={() => openLeftPanel('history')} />
     </div>}
-    <CanvasLeftPanel layersDisabled={!!localEdit} tab={leftTab} hasSelectedElement={board.selectedIds.length > 0} onTabChange={openLeftPanel} onClose={() => setLeftTab(null)} records={generationRecords} unread={hasUnreadGeneration} uploads={uploads} onUpload={onRememberUpload} onNotify={onNotify} onRegenerate={record => void regenerateRecord(record)} onDeleteRecord={id => setGenerationRecords(previous => previous.filter(record => record.id !== id))} onDeleteResult={(id, index) => setGenerationRecords(previous => previous.map(record => record.id === id ? { ...record, images: record.images.filter((_, imageIndex) => imageIndex !== index) } : record))} />
+    <CanvasLeftPanel layersDisabled={!!localEdit} tab={leftTab} hasSelectedElement={board.selectedIds.length > 0} onTabChange={openLeftPanel} onClose={() => setLeftTab(null)} records={generationRecords} unread={hasUnreadGeneration} uploads={uploads} onUpload={onRememberUpload} onNotify={onNotify} onRegenerate={record => void regenerateRecord(record)} onDeleteRecord={id => setGenerationRecords(previous => previous.filter(record => record.id !== id))} onDeleteResult={(id, index) => setGenerationRecords(previous => previous.flatMap(record => {
+      if (record.id !== id) return [record];
+      const images = record.images.filter((_, imageIndex) => imageIndex !== index);
+      return images.length ? [{ ...record, images }] : [];
+    }))} />
     <TaskFeatureTip expanded={!!leftTab} blankClickVersion={board.blankClickVersion} />
     <div ref={bottomToolsRef} className="bottom-tools wb-surface" data-canvas-ui data-phase={phase} role="toolbar" aria-label={t("画布工具栏")} style={{ '--bottom-tools-shift': `${bottomToolsShift}px`, '--bottom-tools-bottom': `${bottomToolsBottom}px` } as CSSProperties}>
       <Tool disabled={!!localEdit} icon="canvas-imgIconEditor" label={t("选择 V")} active={board.effectiveMode === 'select'} onClick={() => board.setMode('select')} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor1" label={t("抓手 H")} active={board.effectiveMode === 'hand'} onClick={() => board.setMode('hand')} />

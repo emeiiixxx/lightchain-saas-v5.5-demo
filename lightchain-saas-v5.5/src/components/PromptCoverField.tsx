@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocale } from '../LocaleContext';
+import type { Notify } from '../notification';
 import { usePresence } from '../usePresence';
 import type { LibraryImage } from '../asset-library';
 import type { CanvasImage } from '../useCanvas';
@@ -10,7 +11,7 @@ import { Icon, IconButton } from './ui';
 export function PromptCoverField({ value, uploads, onUpload, onChange, onBusy, onNotify }: {
   value?: string; uploads: LibraryImage[]; onUpload: (image: LibraryImage) => void;
   onChange: (url?: string) => void; onBusy: (busy: boolean) => void;
-  onNotify: (message: string) => void;
+  onNotify: Notify;
 }) {
   const { t, locale } = useLocale();
   const request = useRef(0);
@@ -38,7 +39,7 @@ export function PromptCoverField({ value, uploads, onUpload, onChange, onBusy, o
       });
       if (request.current === id) { onChange(url); setPickerOpen(false); }
     } catch {
-      if (request.current === id) onNotify('封面图上传失败，请使用20 MB以内的JPG、PNG、WebP或SVG图片');
+      if (request.current === id) onNotify('封面图上传失败，请使用20 MB以内的JPG、PNG、WebP或SVG图片', 'error');
     } finally {
       if (request.current === id) { setBusy(false); onBusy(false); }
     }

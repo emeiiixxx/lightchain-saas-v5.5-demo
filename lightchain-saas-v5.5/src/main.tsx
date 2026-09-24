@@ -7,6 +7,7 @@ import './topbar.css';
 import './asset-picker.css';
 import './workbench.css';
 import './full-image-viewer.css';
+import './toast.css';
 import './tooltip.css';
 import './motion.css';
 import App from './App';

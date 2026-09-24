@@ -2,6 +2,7 @@ import { DownloadFormatMenu } from './DownloadFormatMenu';
 import type { DownloadFormat } from '../download-image';
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useLocale } from '../LocaleContext';
+import type { Notify } from '../notification';
 import { selectionBounds, type Alignment, type Bounds } from '../canvas-selection';
 import { downloadSelection } from '../download-selection';
 import { canvasLayouts } from '../canvas-arrangement';
@@ -14,7 +15,7 @@ type Frame = Bounds & { rotation?: number };
 type Drag = { items: CanvasImage[]; bounds: Bounds; x: number; y: number; handle: string; angle: number; zoom: number; cx: number; cy: number };
 const alignments: [Alignment, string][] = [['left', '左对齐'], ['center', '水平居中'], ['right', '右对齐'], ['top', '顶部对齐'], ['middle', '垂直居中'], ['bottom', '底部对齐']];
 
-export function MultiSelectionControls({ board, onNotify }: { board: Board; onNotify: (message: string) => void }) {
+export function MultiSelectionControls({ board, onNotify }: { board: Board; onNotify: Notify }) {
   const { t, locale } = useLocale();
   const items = board.images.filter(item => board.selectedIds.includes(item.id));
   const bounds = selectionBounds(items);
@@ -89,7 +90,7 @@ export function MultiSelectionControls({ board, onNotify }: { board: Board; onNo
     if (downloadBusy.current) return;
     downloadBusy.current = true; setDownloading(true);
     try { await downloadSelection(items, format); }
-    catch (error) { onNotify(error instanceof Error && error.message === '当前浏览器不支持此格式导出，请选择其他格式' ? error.message : '下载失败，请重试。'); }
+    catch (error) { onNotify(error instanceof Error && error.message === '当前浏览器不支持此格式导出，请选择其他格式' ? error.message : '下载失败，请重试。', 'error'); }
     finally { downloadBusy.current = false; if (alive.current) setDownloading(false); }
   };
   return <>

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import type { Notify } from './notification';
 import type { PromptEntry } from './components/PromptLibrary';
 import { loadPrompts, persistPrompts, promptStorageError, readLegacyPrompts, type PromptStoreResult } from './prompt-storage';
 
-export function useSavedPrompts(onNotify: (message: string) => void) {
+export function useSavedPrompts(onNotify: Notify) {
   const [entries, setEntries] = useState<PromptEntry[]>(() => {
     try { return readLegacyPrompts(); } catch { return []; }
   });
@@ -14,7 +15,7 @@ export function useSavedPrompts(onNotify: (message: string) => void) {
     let active = true;
     const refresh = async () => {
       try { const saved = await loadPrompts(); if (active && !writing.current) { setEntries(saved); loaded.current = true; } }
-      catch (error) { if (active) notify.current(promptStorageError(error)); }
+      catch (error) { if (active) notify.current(promptStorageError(error), 'error'); }
     };
     void refresh();
     if (typeof BroadcastChannel !== 'undefined') {

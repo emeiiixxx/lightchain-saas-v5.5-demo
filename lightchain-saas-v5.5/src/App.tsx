@@ -12,6 +12,8 @@ import { AssetPicker } from './components/AssetPicker';
 import type { LibraryImage } from './asset-library';
 import { Workbench } from './components/Workbench';
 import type { CanvasImage } from './useCanvas';
+import { Toast, type ToastNotice } from './components/Toast';
+import type { Notify } from './notification';
 
 export default function App() {
   const { t, locale } = useLocale();
@@ -20,7 +22,7 @@ export default function App() {
   const [modal, setModal] = useState<'help' | 'support' | 'points' | 'project' | 'upload' | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   useLayoutEffect(() => { document.documentElement.dataset.theme = theme; document.documentElement.style.colorScheme = theme; }, [theme]);
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState<ToastNotice | null>(null);
   const [uploads, setUploads] = useState<LibraryImage[]>([]);
   const uploadUrls = useRef(new Set<string>());
   useEffect(() => () => { uploadUrls.current.forEach(url => URL.revokeObjectURL(url)); }, []);
@@ -28,14 +30,14 @@ export default function App() {
   const [dragging, setDragging] = useState(false);
   const dragCount = useRef(0);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const notify = useCallback((message: string) => { setToast(t(message)); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(''), 3500); }, [t]);
+  const notify: Notify = useCallback((message, tone = 'info') => { setToast({ message: t(message), tone }); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 3500); }, [t]);
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
   const board = useCanvas(notify, theme, locale);
   const [projectUpdatedAt, setProjectUpdatedAt] = useState(Date.now);
   useEffect(() => { setProjectUpdatedAt(Date.now()); }, [board.images, title]);
   const replaceTarget = useRef<string | null>(null);
   const shownModal = usePresence(modal);
-  const shownToast = usePresence(toast || null);
+  const shownToast = usePresence(toast);
   const shownWelcome = usePresence(!board.images.length ? true : null);
   const shownToolbar = usePresence(board.images.length ? true : null);
   const shownDrop = usePresence(dragging && board.images.length ? true : null);
@@ -61,7 +63,7 @@ export default function App() {
       {shownDrop.value && <div data-phase={shownDrop.phase} className="drop-overlay">{t("松开，将图片添加到画布")}</div>}
       <div className={`workbench ${board.images.length ? '' : 'workbench-empty'}`}><Workbench uploads={uploads} onRememberUpload={rememberUpload} board={board} open={panel} onOpenChange={setPanel} phase={shownToolbar.phase} onUpload={chooseFiles} onReplace={replaceImage} onHelp={() => setModal('help')} onNotify={notify} /></div>
     </main>
-    {shownToast.value && <div popover="manual" ref={element => { if (element && !element.matches(':popover-open')) element.showPopover(); }} data-phase={shownToast.phase} className="toast" role="status">{shownToast.value}</div>}
+    {shownToast.value && <Toast notice={shownToast.value} phase={shownToast.phase} />}
     {shownModal.value === 'upload' && <AssetPicker locale={locale} phase={shownModal.phase} uploads={uploads} onUpload={rememberUpload} onClose={() => setModal(null)} onConfirm={image => confirmImages([image])} onConfirmBatch={replaceTarget.current ? undefined : confirmImages} />}
     {shownModal.value && shownModal.value !== 'upload' && <Dialog phase={shownModal.phase} title={shownModal.value === 'project' ? t("项目概览") : shownModal.value === 'help' ? t("画布操作指南") : shownModal.value === 'support' ? t("联系客服") : t("积分账户")} onClose={() => setModal(null)}>{shownModal.value === 'project' ? <><div className="project-card-preview-area"><ProjectCard name={title} coverUrl={board.projectCover?.url} updatedAt={projectUpdatedAt} onNameChange={setTitle} onOpen={() => setModal(null)} onMoreAction={() => notify(demoNotice(locale))} /></div><p className="text-xs leading-5 text-muted">{t("当前项目仅保留在本次打开的页面中。")}</p><div className="flex justify-end mt-6"><Button variant="outline" onClick={() => setModal(null)}>{t("返回画布")}</Button></div></> : shownModal.value === 'help' ? <div className="help-content"><p>{t("点击素材卡，或者将图片拖入画布，开始设计。")}</p><dl><dt>{t("平移画布")}</dt><dd>{t("空格 + 拖动 / 手形工具 / 中键拖动 / 滚轮")}</dd><dt>{t("缩放画布")}</dt><dd>{t("⌘ / Ctrl / Option / Alt + 滚轮，或触控板捏合")}</dd><dt>{t("移动图片")}</dt><dd>{t("按住图片拖动")}</dd><dt>{t("恢复 100% / 适应画布")}</dt><dd>1 / 2</dd><dt>{t("删除选中图片")}</dt><dd>Delete / Backspace</dd><dt>{t("撤销上传、移动、删除")}</dt><dd>⌘ / Ctrl + Z</dd></dl><p className="muted">{t("当前 Demo 的图片仅保留在本次打开的页面中。")}</p></div> : shownModal.value === 'support' ? <p className="muted">{t("当前为设计生产工作台 Demo，暂未接入在线客服。")}</p> : <div><p className="muted">{t("演示账户可用积分")}</p><p className="text-3xl font-medium my-4">99,999</p><p className="muted">{t("当前 Demo 暂未接入积分购买。")}</p></div>}</Dialog>}
   </div>;

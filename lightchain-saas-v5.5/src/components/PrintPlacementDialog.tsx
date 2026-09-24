@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocale } from '../LocaleContext';
+import type { Notify } from '../notification';
 import { demoNotice } from '../demo-feedback';
 import { usePresence } from '../usePresence';
 import type { CanvasImage } from '../useCanvas';
@@ -14,7 +15,7 @@ import '../print-placement.css';
 const demoGarment = '/assets/print-demo-garment.png';
 export function PrintPlacementDialog({ source, draft, phase, onClose, onConfirm, onNotify }: {
   source: CanvasImage; draft: QuickEditDraft; phase: 'enter' | 'exit';
-  onClose: () => void; onConfirm: () => void; onNotify: (message: string) => void;
+  onClose: () => void; onConfirm: () => void; onNotify: Notify;
 }) {
   const { t, locale } = useLocale();
   const submitted = useRef(false);

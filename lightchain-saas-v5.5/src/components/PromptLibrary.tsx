@@ -2,6 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { Button, Icon, IconButton } from './ui';
 import { useLocale } from '../LocaleContext';
+import type { Notify } from '../notification';
 import { PromptCoverField } from './PromptCoverField';
 import './prompt-library.css';
 import type { PromptStoreResult } from '../prompt-storage';
@@ -19,7 +20,7 @@ export function SavePrompt({anchor,phase,onClose,onSave}:{anchor:HTMLElement;pha
  <footer><Button variant="secondary" onClick={onClose}>{t('取消')}</Button><Button variant="primary" disabled={!name.trim()} onClick={()=>onSave(name.trim())}>{t('保存')}</Button></footer></div>;
 }
 function useModal(ref:RefObject<HTMLDialogElement|null>){useEffect(()=>{const old=document.activeElement as HTMLElement|null;const el=ref.current!;el.showModal();return()=>{el.close();if(old?.isConnected)old.focus({preventScroll:true});};},[]);}
-export function PromptLibrary({phase,entries,uploads,onUpload,onStore,onNotify:notify,onClose}:{phase:'enter'|'exit';entries:Entry[];uploads:LibraryImage[];onUpload:(image:LibraryImage)=>void;onStore:(e:Entry[])=>Promise<PromptStoreResult>;onNotify:(message:string)=>void;onClose:()=>void}){
+export function PromptLibrary({phase,entries,uploads,onUpload,onStore,onNotify:notify,onClose,onApply}:{phase:'enter'|'exit';entries:Entry[];uploads:LibraryImage[];onUpload:(image:LibraryImage)=>void;onStore:(e:Entry[])=>Promise<PromptStoreResult>;onNotify:Notify;onClose:()=>void;onApply?:(content:string,mode:'replace'|'append')=>void}){
  const { t } = useLocale();const ref=useRef<HTMLDialogElement>(null);useModal(ref);const [selected,setSelected]=useState(entries[0]?.id??'');const [query,setQuery]=useState('');const [draft,setDraft]=useState<Entry|null>(null);
  const [menu,setMenu]=useState<{entry:Entry;anchor:HTMLElement}|null>(null);
  const [coverBusy,setCoverBusy]=useState(false);
@@ -46,14 +47,14 @@ export function PromptLibrary({phase,entries,uploads,onUpload,onStore,onNotify:n
    setCoverBusy(true);
    const result=await onStore(next);
    setCoverBusy(false);
-   if(!result.ok){notify(result.message);return;}
+   if(!result.ok){notify(result.message, 'error');return;}
    setQuery('');setSelected(entry.id);setDraft(null);
    requestAnimationFrame(()=>ref.current?.querySelector('[data-selected="true"]')?.scrollIntoView({block:'nearest'}));
  };
 
  const sorted=[...entries].sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned));
  const listed=isNew?[draft!,...sorted]:sorted;
- const removeEntry=async(id:string)=>{const next=entries.filter(e=>e.id!==id);const result=await onStore(next);if(!result.ok){notify(result.message);return;}if(result.ok){if(selected===id){setSelected([...next].sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned))[0]?.id??'');setDraft(null);}setMenu(null);}};
+ const removeEntry=async(id:string)=>{const next=entries.filter(e=>e.id!==id);const result=await onStore(next);if(!result.ok){notify(result.message, 'error');return;}if(result.ok){if(selected===id){setSelected([...next].sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned))[0]?.id??'');setDraft(null);}setMenu(null);}};
  const togglePin=async()=>{
    if(!menu)return;
    const entry=entries.find(e=>e.id===menu.entry.id);if(!entry)return;
@@ -63,12 +64,12 @@ export function PromptLibrary({phase,entries,uploads,onUpload,onStore,onNotify:n
    const rest=entries.filter(e=>e.id!==entry.id);
    const next=pinned?[updated,...rest]:[...rest.filter(e=>e.pinned),updated,...rest.filter(e=>!e.pinned)];
    const result=await onStore(next);
-   if(!result.ok){notify(result.message);return;}
+   if(!result.ok){notify(result.message, 'error');return;}
    if(result.ok){
      if(draft?.id===entry.id)setDraft({...draft,pinned});
      setMenu(null);
      requestAnimationFrame(()=>ref.current?.querySelector('nav')?.scrollTo({top:0}));
-     notify(pinned?'已置顶':'已取消置顶');
+     notify(pinned?'已置顶':'已取消置顶', 'success');
    }
  };
  const visible=listed.filter(e=>(e.name+' '+e.content).toLowerCase().includes(query.toLowerCase()));const current=entries.find(e=>e.id===selected);
@@ -82,7 +83,7 @@ export function PromptLibrary({phase,entries,uploads,onUpload,onStore,onNotify:n
 
  <section className={isEmpty?'prompt-library-initial':undefined} data-node-id={isEmpty?'171:4333':undefined}><header>{!isEmpty&&<h2>{isNew?t('新增提示词'):draft?t('编辑提示词'):t('提示词详情')}</h2>}<IconButton size="m" icon="close" aria-label={t('关闭')} onClick={onClose}/></header>
  <div className="prompt-library-body">{isEmpty?<div className="prompt-library-empty-state" data-node-id="171:4443"><div className="prompt-library-empty-content"><img src="/assets/prompt-library-empty.png" alt="" width={128} height={128}/><h3>{t('暂无数据')}</h3><p>{t('当前没有可展示的内容')}</p></div><Button variant="primary" size="s" onClick={addPrompt}>{t('新增提示词')}</Button></div>:draft?<><label><span>{t('提示词标题')}<em className="prompt-required">*</em></span><div className="prompt-edit-title"><input data-prompt-name aria-label={t('编辑提示词名称')} placeholder={t('请输入名称')} required maxLength={50} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/><span>{draft.name.length}/50</span></div></label><PromptCoverField key={draft.id} value={draft.coverUrl} uploads={uploads} onUpload={onUpload} onChange={coverUrl=>setDraft(previous=>previous?{...previous,coverUrl}:previous)} onBusy={setCoverBusy} onNotify={notify}/><label className="prompt-content-edit"><span>{t('提示词内容')}<em className="prompt-required">*</em></span><div className="prompt-edit-content"><textarea aria-label={t('编辑提示词内容')} placeholder={t('请输入提示词内容...')} required maxLength={2000} value={draft.content} onChange={e=>setDraft({...draft,content:e.target.value})}/><span>{draft.content.length}/2000</span></div></label></>:current?<><div className="prompt-detail-card"><h3>{current.name}</h3>{current.coverUrl&&<img className="prompt-detail-cover" src={current.coverUrl} alt={t("封面图")}/>}<p className="prompt-detail-content">{current.content}</p></div></>:<p className="prompt-empty">{t('选择或新增一条提示词')}</p>}</div>
- {!isEmpty&&<footer>{draft?<>{!isNew&&<Button variant="outline" className="prompt-delete" size="m" onClick={()=>removeEntry(draft.id)}><Icon name="library-promptTrash" size={20}/>{t('删除')}</Button>}<Button variant="secondary" size="m" onClick={cancelDraft}>{t('取消')}</Button>{!isNew&&<Button variant="secondary" size="m" disabled={coverBusy||!draft.name.trim()||!draft.content.trim()} onClick={()=>commitDraft(true)}>{t('另存为')}</Button>}<Button variant="primary" size="m" disabled={coverBusy||!draft.name.trim()||!draft.content.trim()} onClick={()=>commitDraft()}>{t('保存')}</Button></>:<><Button variant="outline" size="m" disabled={!current} onClick={()=>setDraft(current??null)}><Icon name="library-promptEdit" size={20}/>{t('编辑')}</Button><Button variant="primary" size="m" disabled={!current} onClick={async()=>{if(!current)return;try{await navigator.clipboard.writeText(current.content);notify("提示词已复制");}catch{notify("复制失败，请重试");}}}><Icon name="generation-record-imgLeftIcon2" size={20}/>{t("复制提示词")}</Button></>}</footer>}</section></dialog>;
+ {!isEmpty&&<footer>{draft?<>{!isNew&&<Button variant="outline" className="prompt-delete" size="m" onClick={()=>removeEntry(draft.id)}><Icon name="library-promptTrash" size={20}/>{t('删除')}</Button>}<Button variant="secondary" size="m" onClick={cancelDraft}>{t('取消')}</Button>{!isNew&&<Button variant="secondary" size="m" disabled={coverBusy||!draft.name.trim()||!draft.content.trim()} onClick={()=>commitDraft(true)}>{t('另存为')}</Button>}<Button variant="primary" size="m" disabled={coverBusy||!draft.name.trim()||!draft.content.trim()} onClick={()=>commitDraft()}>{t('保存')}</Button></>:<><Button variant="outline" size="m" disabled={!current} onClick={()=>setDraft(current??null)}><Icon name="library-promptEdit" size={20}/>{t('编辑')}</Button>{onApply?<><Button variant="secondary" size="m" disabled={!current} onClick={()=>{if(current)onApply(current.content,'append');}}>{t('在已有输入后插入')}</Button><Button variant="primary" size="m" disabled={!current} onClick={()=>{if(current)onApply(current.content,'replace');}}>{t('应用并覆盖原文')}</Button></>:<Button variant="primary" size="m" disabled={!current} onClick={async()=>{if(!current)return;try{await navigator.clipboard.writeText(current.content);notify("提示词已复制", 'success');}catch{notify("复制失败，请重试", 'error');}}}><Icon name="generation-record-imgLeftIcon2" size={20}/>{t("复制提示词")}</Button>}</>}</footer>}</section></dialog>;
 }
 
 function PromptCardMenu({anchor,pinned,onClose,onPin,onDelete}:{anchor:HTMLElement;pinned:boolean;onClose:()=>void;onPin:()=>void;onDelete:()=>void}){

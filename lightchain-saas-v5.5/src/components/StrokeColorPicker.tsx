@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent } from 'react';
 import { useLocale } from '../LocaleContext';
+import type { Notify } from '../notification';
 import { usePresence } from '../usePresence';
 import { Divider, IconButton } from './ui';
 
@@ -34,7 +35,7 @@ function OpacityField({ value, begin, change }: { value: number; begin: () => vo
 }
 
 export function StrokeColorPicker({ color = '#DADADA', opacity = 100, onBegin, onChange, onNotify }: {
-  color?: string; opacity?: number; onBegin: () => void; onChange: (patch: { stroke?: string; strokeOpacity?: number }) => void; onNotify: (message: string) => void;
+  color?: string; opacity?: number; onBegin: () => void; onChange: (patch: { stroke?: string; strokeOpacity?: number }) => void; onNotify: Notify;
 }) {
   const { t } = useLocale();
   const hex = normalizeHex(color) ?? '#DADADA';
@@ -73,11 +74,11 @@ export function StrokeColorPicker({ color = '#DADADA', opacity = 100, onBegin, o
   }, [shown.value]);
   const pickScreenColor = async () => {
     const EyeDropper = (window as unknown as { EyeDropper?: new () => { open: (options: { signal: AbortSignal }) => Promise<{ sRGBHex: string }> } }).EyeDropper;
-    if (!EyeDropper) { onNotify('当前浏览器不支持屏幕取色，请使用色板或输入颜色值'); return; }
+    if (!EyeDropper) { onNotify('当前浏览器不支持屏幕取色，请使用色板或输入颜色值', 'error'); return; }
     eyedropperAbort.current?.abort();
     const controller = new AbortController(); eyedropperAbort.current = controller;
     try { const result = await new EyeDropper().open({ signal: controller.signal }); if (active.current) { onBegin(); onChange({ stroke: result.sRGBHex.toUpperCase() }); } }
-    catch (error) { if (active.current && !(error instanceof DOMException && error.name === 'AbortError')) onNotify('取色失败，请重试'); }
+    catch (error) { if (active.current && !(error instanceof DOMException && error.name === 'AbortError')) onNotify('取色失败，请重试', 'error'); }
   };
   const changeSv = (event: PointerEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();

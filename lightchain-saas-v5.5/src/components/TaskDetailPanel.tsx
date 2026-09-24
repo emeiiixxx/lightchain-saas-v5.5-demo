@@ -4,6 +4,7 @@ import { prepareMainImage } from '../asset-library';
 import { useEffect, useState } from 'react';
 import type { GenerationRecord } from './CanvasLeftPanel';
 import { useLocale } from '../LocaleContext';
+import type { Notify } from '../notification';
 import { demoNotice } from '../demo-feedback';
 import { Button, Divider, Icon } from './ui';
 import { ProgressiveImage } from './ProgressiveImage';
@@ -16,7 +17,7 @@ type Props = {
   record: GenerationRecord; selectedIndex: number; active: boolean;
   onSelect: (index: number) => void; onLibrary: () => void;
   onSave: (anchor: HTMLElement, content: string) => void;
-  onCopy: (text: string) => void; onNotify: (text: string) => void;
+  onCopy: (text: string) => void; onNotify: Notify;
   onRegenerate: () => void; onDeleteImage: () => void;
 };
 export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLibrary, onSave, onCopy, onNotify, onRegenerate, onDeleteImage }: Props) {
@@ -40,7 +41,7 @@ export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLib
       const name = `${t(record.title)}-${selectedIndex + 1}`;
       const loaded = await prepareMainImage({ id: image.url, url: image.url, name });
       await exportImage(loaded.image, name, format);
-    } catch (error) { onNotify(error instanceof Error && error.message === '当前浏览器不支持此格式导出，请选择其他格式' ? t(error.message) : t('下载失败，请重试。')); }
+    } catch (error) { onNotify(error instanceof Error && error.message === '当前浏览器不支持此格式导出，请选择其他格式' ? t(error.message) : t('下载失败，请重试。'), 'error'); }
     finally { setDownloading(false); }
   };
   return <aside className="task-detail-panel" data-task-controls aria-label={locale === 'en' ? 'Task details' : locale === 'ja' ? 'タスク詳細' : '任务详情'}>

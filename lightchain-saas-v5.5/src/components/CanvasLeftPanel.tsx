@@ -4,6 +4,7 @@ import { TaskDetailPanel } from './TaskDetailPanel';
 import { demoNotice } from '../demo-feedback';
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { useLocale } from '../LocaleContext';
+import type { Notify } from '../notification';
 import { usePresence } from '../usePresence';
 import { prepareMainImage, type LibraryImage } from '../asset-library';
 import type { CanvasImage } from '../useCanvas';
@@ -16,6 +17,7 @@ import { PromptLibrary, SavePrompt } from './PromptLibrary';
 import { useSavedPrompts } from '../useSavedPrompts';
 import { TaskRecordMoreMenu } from './TaskRecordMoreMenu';
 import { downloadRecordGroup } from '../download-record-group';
+import type { DownloadFormat } from '../download-image';
 
 export type LeftPanelTab = 'layers' | 'assets' | 'history';
 export type GenerationRecord = {
@@ -83,7 +85,7 @@ const tabs = [
 export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose, records, unread, uploads, onUpload, onNotify, onRegenerate, onDeleteRecord, onDeleteResult, layersDisabled = false }: {
   hasSelectedElement: boolean; layersDisabled?: boolean;
   tab: LeftPanelTab | null; onTabChange: (tab: LeftPanelTab) => void; onClose: () => void;
-  records: GenerationRecord[]; unread: boolean; uploads: LibraryImage[]; onUpload: (image: LibraryImage) => void; onNotify: (message: string) => void;
+  records: GenerationRecord[]; unread: boolean; uploads: LibraryImage[]; onUpload: (image: LibraryImage) => void; onNotify: Notify;
   onRegenerate: (record: GenerationRecord) => void; onDeleteRecord: (id: string) => void; onDeleteResult: (id: string, index: number) => void;
 }) {
   const { t, locale } = useLocale();
@@ -116,8 +118,8 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
     return () => observer.disconnect();
   }, [shown.value, locale]);
   const copyPrompt = async (text: string) => {
-    try { await navigator.clipboard.writeText(text); onNotify('提示词已复制'); }
-    catch { onNotify('复制失败，请重试'); }
+    try { await navigator.clipboard.writeText(text); onNotify('提示词已复制', 'success'); }
+    catch { onNotify('复制失败，请重试', 'error'); }
   };
   const openImage = async (record: GenerationRecord, index: number, closeOnError = false) => {
     if (!record.images[index]) return;
@@ -127,7 +129,7 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
     try {
       const image = await prepareMainImage({ id: url, url, name });
       if (request === previewRequest.current) setPreview({ image: { ...image, x: 0, y: 0 }, record, index });
-    } catch { if (request === previewRequest.current) { onNotify('图片加载失败，请重试'); if (closeOnError) setPreview(null); } }
+    } catch { if (request === previewRequest.current) { onNotify('图片加载失败，请重试', 'error'); if (closeOnError) setPreview(null); } }
   };
   const allRecords = [...records, ...demoRecords, ...additionalDemoRecords]
     .filter(record => !deletedDemoIds.includes(record.id))
@@ -146,14 +148,13 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
       setDemoResultOverrides(previous => ({ ...previous, [record.id]: images }));
       if (!images.length) setDeletedDemoIds(previous => [...previous, record.id]);
     } else onDeleteResult(record.id, index);
-    // Keep the task and its original generation parameters; only remove this result.
     previewRequest.current++;
     if (!images.length) setPreview(null);
     else void openImage({ ...current, images }, Math.min(index, images.length - 1), true);
   };
-  const downloadGroup = async (record: GenerationRecord) => {
-    try { await downloadRecordGroup(record.images, t(record.title)); }
-    catch { onNotify(t('下载失败，请重试。')); }
+  const downloadGroup = async (record: GenerationRecord, format: DownloadFormat) => {
+    try { await downloadRecordGroup(record.images, t(record.title), format); }
+    catch (error) { onNotify(error instanceof Error && error.message === '当前浏览器不支持此格式导出，请选择其他格式' ? t(error.message) : t('下载失败，请重试。'), 'error'); }
   };
   return <>
     {shown.value && <aside id="canvas-left-sidebar" className="canvas-left-panel" aria-label={t(tabs.find(item => item.value === shown.value)!.label)} data-canvas-ui data-node-id="66:4715" data-phase={shown.phase} inert={shown.phase === 'exit'} onKeyDown={event => { if (event.key === 'Escape' && !document.querySelector('dialog[open]')) { event.preventDefault(); event.stopPropagation(); onClose(); } }}>
@@ -178,7 +179,7 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
         </div> : <div className="generation-record-list">
           {allRecords.map((record, index) => <article className="generation-record" key={record.id}>
             <div className="generation-record-info">
-              <div className="generation-record-heading"><div className="generation-record-heading-text"><h3 data-tooltip={t(record.title)}>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={() => void downloadGroup(record)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget({ kind: 'record', record })} /></div>
+              <div className="generation-record-heading"><div className="generation-record-heading-text"><h3 data-tooltip={t(record.title)}>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={format => void downloadGroup(record, format)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget({ kind: 'record', record })} /></div>
               <GenerationRecordTags record={record} active={tab === 'history'} />
               {recordHasPrompt(record) && <div className="generation-record-prompt">
                 <p data-tooltip={t(record.prompt!)} data-tooltip-truncated-only>{t(record.prompt!)}</p>
@@ -201,11 +202,11 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
       </div>
     </aside>}
     {shownPreview.value && <FullImageViewer image={shownPreview.value.image} images={shownPreview.value.record.images.map((item, index) => ({ url: item.url, name: `${t(shownPreview.value!.record.title)} ${index + 1}` }))} selectedIndex={shownPreview.value.index} onSelect={index => void openImage(shownPreview.value!.record, index)} locale={locale} phase={shownPreview.phase} onClose={() => { previewRequest.current++; setPreview(null); }} details={<TaskDetailPanel record={shownPreview.value.record} selectedIndex={shownPreview.value.index} active={shownPreview.phase !== 'exit'} onSelect={index => void openImage(shownPreview.value!.record, index)} onLibrary={() => setLibraryOpen(true)} onSave={(anchor, content) => setSaveTarget({ anchor, content })} onCopy={text => void copyPrompt(text)} onNotify={onNotify} onRegenerate={() => { onRegenerate(shownPreview.value!.record); previewRequest.current++; setPreview(null); }} onDeleteImage={() => setDeleteTarget({ kind: 'image', record: shownPreview.value!.record, index: shownPreview.value!.index })} />} />}
-    {shownDelete.value && createPortal(<Dialog title={t('删除确认')} className="task-delete-dialog" closeIcon="task-delete-close" phase={shownDelete.phase} onClose={() => setDeleteTarget(null)}><p className="task-delete-dialog-description">{t(shownDelete.value.kind === 'image' ? '删除当前图片后不可恢复，是否确认删除？' : '删除后不可恢复，是否确认删除？')}</p><footer className="task-delete-dialog-actions"><Button size="m" variant="secondary" onClick={() => setDeleteTarget(null)}>{t('取消')}</Button><Button size="m" variant="danger" onClick={() => { const target = shownDelete.value!; if (target.kind === 'image') deleteResult(target.record, target.index); else deleteRecord(target.record); setDeleteTarget(null); }}>{t('确认删除')}</Button></footer></Dialog>, document.body)}
+    {shownDelete.value && createPortal(<Dialog title={t('删除确认')} className="task-delete-dialog" closeIcon="task-delete-close" phase={shownDelete.phase} onClose={() => setDeleteTarget(null)}><p className="task-delete-dialog-description">{t(shownDelete.value.kind === 'record' ? '删除这条任务记录？删除后不可恢复，画布图片会保留。' : shownDelete.value.record.images.length === 1 ? '删除最后一张结果图后，该任务记录也会从列表移除。删除后不可恢复，画布图片会保留。' : '从记录中删除这张结果图？删除后不可恢复，画布图片会保留。')}</p><footer className="task-delete-dialog-actions"><Button size="m" variant="secondary" onClick={() => setDeleteTarget(null)}>{t('取消')}</Button><Button size="m" variant="danger" onClick={() => { const target = shownDelete.value!; if (target.kind === 'image') deleteResult(target.record, target.index); else deleteRecord(target.record); setDeleteTarget(null); }}>{t('确认删除')}</Button></footer></Dialog>, document.body)}
     {library.value && createPortal(<PromptLibrary phase={library.phase} entries={entries} uploads={uploads} onUpload={onUpload} onStore={store} onNotify={onNotify} onClose={() => setLibraryOpen(false)} />, document.body)}
     {shownSave.value && createPortal(<SavePrompt anchor={shownSave.value.anchor} phase={shownSave.phase} onClose={() => setSaveTarget(null)} onSave={async name => {
       const result = await store([{ id: crypto.randomUUID(), name, content: shownSave.value!.content }, ...entries]);
-      if (result.ok) { setSaveTarget(null); onNotify('提示词已保存'); } else { onNotify(result.message); }
+      if (result.ok) { setSaveTarget(null); onNotify('提示词已保存', 'success'); } else { onNotify(result.message, 'error'); }
     }} />, shownSave.value.anchor.closest('dialog') ?? document.body)}
   </>;
 }

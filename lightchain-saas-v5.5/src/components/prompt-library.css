@@ -76,7 +76,7 @@
 .prompt-library nav strong span {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .prompt-library nav .prompt-card-more {position:absolute;right:12px;top:8px;width:20px;min-width:20px;height:20px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity var(--motion-duration) var(--motion-easing);}
 .prompt-list-card:hover .prompt-card-more,.prompt-list-card:focus-within .prompt-card-more,.prompt-card-more[aria-expanded='true'] {opacity:1;pointer-events:auto;}
-.prompt-card-menu {position:fixed;inset:auto;margin:0;padding:8px;width:max-content;height:max-content;min-height:0;max-height:calc(100dvh - 16px);overflow-y:auto;align-self:start;border:1px solid var(--border-weak);border-radius:12px;background:var(--surface-floating);box-shadow:0 6px 14px -2px var(--overlay-weak);color:var(--text-secondary);}
+.prompt-card-menu {position:fixed;inset:auto;margin:0;padding:8px;width:max-content;height:max-content;min-height:0;max-height:calc(100dvh - 16px);overflow-y:auto;align-self:start;border:1px solid var(--border-weak);border-radius:12px;background:var(--surface-secondary);box-shadow:0 6px 14px -2px var(--overlay-weak);color:var(--text-secondary);}
 .prompt-card-menu:popover-open {display:grid;grid-template-columns:max-content;grid-auto-rows:32px;align-content:start;gap:4px;}
 .prompt-card-menu button {display:flex;align-items:center;gap:8px;width:auto;min-width:128px;height:32px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:var(--text-secondary);font-size:14px;line-height:20px;white-space:nowrap;}
 .prompt-card-menu button:hover,.prompt-card-menu button:focus-visible {background:var(--state-hover);}

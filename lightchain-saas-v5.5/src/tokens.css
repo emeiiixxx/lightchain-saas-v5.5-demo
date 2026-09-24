@@ -17,6 +17,7 @@
   --text-on-brand-white: rgba(255, 255, 255, 1);
   --text-tertiary: rgba(170, 184, 182, 1);
   --radius-l: 12px;
+  --radius-m: 6px;
   --height-2xl: 32px;
   --radius-base: 8px;
   --height-l: 20px;
@@ -55,6 +56,7 @@
   --text-on-brand-white: rgba(255, 255, 255, 1);
   --text-tertiary: rgba(82, 97, 95, 1);
   --radius-l: 12px;
+  --radius-m: 6px;
   --height-2xl: 32px;
   --radius-base: 8px;
   --height-l: 20px;

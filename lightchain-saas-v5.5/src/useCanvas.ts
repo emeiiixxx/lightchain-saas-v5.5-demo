@@ -1,4 +1,5 @@
 import { resolveProjectCover } from './project-cover';
+import type { Notify } from './notification';
 import { CanvasIsolationCache, paintCanvasImage, paintCanvasScene, type CanvasPalette } from './canvas-renderer';
 import { nextCanvasTime, orderArrangementUnits } from './canvas-order';
 import { makeRoomForResults } from './generation-placement';
@@ -28,7 +29,7 @@ const MIN_ZOOM = 0.1;
 const clamp = (n: number) => Math.min(4, Math.max(MIN_ZOOM, n));
 const editing = (target: EventTarget | null) => target instanceof HTMLElement && !!target.closest('input,textarea,select,[contenteditable],dialog');
 
-export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'light', locale = 'zh-CN') {
+export function useCanvas(notify: Notify, theme: 'dark' | 'light', locale = 'zh-CN') {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lock = useRef(false);
   const [locked, setLocked] = useState(false);
@@ -324,7 +325,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
   const copySelected = useCallback(() => {
     finishPlacement();
     const items = live.current.images.filter(item => live.current.selectedIds.includes(item.id));
-    if (items.length) { copied.current = items.map(item => ({ ...item })); notify('已复制，可在画布中粘贴'); }
+    if (items.length) { copied.current = items.map(item => ({ ...item })); notify('已复制，可在画布中粘贴', 'success'); }
   }, [notify, finishPlacement]);
   const paste = useCallback(() => { const clones = insertCopies(copied.current); if (clones) copied.current = clones; }, [insertCopies]);
   const updateImages = useCallback((patches: (Partial<CanvasImage> & { id: string })[], record = false) => {
@@ -370,13 +371,14 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     finishPlacement();
     const state = live.current;
     const target = state.images.find(item => item.id === imageId);
-    if (!target) return;
+    if (!target) return false;
     if (!target.cover) {
       remember(state.images);
       const next = state.images.map(item => ({ ...item, cover: item.id === imageId }));
       live.current.images = next; setImages(next);
     }
-    notify('已设为项目封面');
+    notify('已设为项目封面', 'success');
+    return true;
   }, [remember, notify, finishPlacement]);
   const downloadImage = useCallback(async (format: 'PNG' | 'JPG' | 'WebP' | 'AVIF') => {
     const state = live.current;
@@ -385,7 +387,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     try {
       if (items.length > 1) await downloadSelection(items, format);
       else await exportImage(items[0].image, items[0].name, format);
-    } catch (error) { notify(error instanceof Error && error.message === '当前浏览器不支持此格式导出，请选择其他格式' ? error.message : '下载失败，请重试。'); }
+    } catch (error) { notify(error instanceof Error && error.message === '当前浏览器不支持此格式导出，请选择其他格式' ? error.message : '下载失败，请重试。', 'error'); }
   }, [notify]);
   const arrange = useCallback((layout: CanvasLayout = 'grid', scope: 'canvas' | 'selection' = 'canvas') => {
     if (lock.current) return;
@@ -502,7 +504,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     if (lock.current) return;
     finishPlacement();
     const accepted = Array.from(files).filter(file => ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'].includes(file.type) && file.size <= 20 * 1024 * 1024);
-    if (accepted.length !== files.length) notify('支持 JPG、PNG、WebP、SVG、GIF，单张图片不超过 20 MB');
+    if (accepted.length !== files.length) notify('支持 JPG、PNG、WebP、SVG、GIF，单张图片不超过 20 MB', 'error');
     if (!accepted.length) return;
     const results = await Promise.allSettled(accepted.map(file => new Promise<Omit<CanvasImage, 'x' | 'y'>>((resolve, reject) => {
       const url = URL.createObjectURL(file), image = new Image(); urls.current.push(url);
@@ -510,7 +512,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
       image.onerror = reject; image.src = url;
     })));
     const loaded = results.flatMap(r => r.status === 'fulfilled' ? [r.value] : []);
-    if (loaded.length !== accepted.length) notify('部分图片无法读取，请重新选择');
+    if (loaded.length !== accepted.length) notify('部分图片无法读取，请重新选择', 'error');
     if (!loaded.length || lock.current) return;
     finishPlacement();
     const { images: old, size: viewport } = live.current;

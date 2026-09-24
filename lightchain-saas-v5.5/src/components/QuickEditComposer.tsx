@@ -1,5 +1,6 @@
 import { imageBounds } from '../canvas-selection';
 import { demoNotice } from '../demo-feedback';
+import type { Notify } from '../notification';
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type Dispatch, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
 import { AssetPicker } from './AssetPicker';
@@ -11,13 +12,15 @@ import { useLocale } from '../LocaleContext';
 import { usePresence } from '../usePresence';
 import { type CanvasImage, useCanvas } from '../useCanvas';
 import { Button, Divider, Icon, IconButton } from './ui';
+import { PromptLibrary, SavePrompt } from './PromptLibrary';
+import { useSavedPrompts } from '../useSavedPrompts';
 
 export type CanvasEditTool = '局部修改' | '印花上身' | 'AI试衣';
 type Reference = { id: string; name: string; url: string };
 export type QuickEditDraft = { value: string; references: Reference[]; ratio: string; resolution: string; count: string; region?: EditRegion; printMode?: 'position' | 'repeat' };
 export const createQuickEditDraft = (): QuickEditDraft => ({ value: '', references: [], ratio: 'auto', resolution: '2K', count: '1' });
 export function QuickEditComposer({ board, image, phase, onClose, onSubmit, uploads, onUpload, draft, onDraftChange, generating = false, localEdit = false, tool = '局部修改', onAdjustPrint, onNotify }: {
-  localEdit?: boolean; tool?: CanvasEditTool; onAdjustPrint?: (draft: QuickEditDraft) => void; onNotify: (message: string) => void;
+  localEdit?: boolean; tool?: CanvasEditTool; onAdjustPrint?: (draft: QuickEditDraft) => void; onNotify: Notify;
   board: ReturnType<typeof useCanvas>; image: CanvasImage; phase: 'enter' | 'exit'; onClose: () => void;
   onSubmit: (request: string, draft: QuickEditDraft) => void; uploads: LibraryImage[]; onUpload: (image: LibraryImage) => void; generating?: boolean;
   draft: QuickEditDraft; onDraftChange: Dispatch<SetStateAction<QuickEditDraft>>;
@@ -40,6 +43,12 @@ export function QuickEditComposer({ board, image, phase, onClose, onSubmit, uplo
   const setCount = (count: string) => onDraftChange(previous => ({ ...previous, count }));
   const [menu, setMenu] = useState<'settings' | 'model' | null>(null);
   const shownMenu = usePresence(menu);
+  const { entries: savedPrompts, store: storePrompts } = useSavedPrompts(onNotify);
+  const [savePromptAnchor, setSavePromptAnchor] = useState<HTMLElement | null>(null);
+  const shownSavePrompt = usePresence(savePromptAnchor);
+  const [promptLibraryOpen, setPromptLibraryOpen] = useState(false);
+  const shownPromptLibrary = usePresence(promptLibraryOpen ? true : null);
+  const focusInputAfterApply = useRef(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCapacity, setPickerCapacity] = useState(4);
   const shownPicker = usePresence(pickerOpen ? true : null);
@@ -49,6 +58,12 @@ export function QuickEditComposer({ board, image, phase, onClose, onSubmit, uplo
   const [error, setError] = useState('');
   const root = useRef<HTMLDivElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (shownPromptLibrary.value || !focusInputAfterApply.current) return;
+    focusInputAfterApply.current = false;
+    const input = textarea.current;
+    if (input) { input.focus({ preventScroll: true }); input.setSelectionRange(input.value.length, input.value.length); }
+  }, [shownPromptLibrary.value]);
   const active = useRef(true);
   const reading = useRef(false);
   const [height, setHeight] = useState(localEdit ? 280 : 140);
@@ -93,11 +108,13 @@ export function QuickEditComposer({ board, image, phase, onClose, onSubmit, uplo
     const escape = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
       e.preventDefault(); e.stopImmediatePropagation();
-      if (menu) { setMenu(null); if (menu === 'model') modelAnchor.current?.querySelector<HTMLButtonElement>('button')?.focus(); else textarea.current?.focus(); } else { close.current(); board.canvasRef.current?.focus(); }
+      if (savePromptAnchor) { setSavePromptAnchor(null); savePromptAnchor.focus({ preventScroll: true }); }
+      else if (menu) { setMenu(null); if (menu === 'model') modelAnchor.current?.querySelector<HTMLButtonElement>('button')?.focus(); else textarea.current?.focus(); }
+      else { close.current(); board.canvasRef.current?.focus(); }
     };
     window.addEventListener('pointerdown', dismiss, true); window.addEventListener('keydown', escape, true);
     return () => { window.removeEventListener('pointerdown', dismiss, true); window.removeEventListener('keydown', escape, true); };
-  }, [menu, board.canvasRef]);
+  }, [menu, board.canvasRef, savePromptAnchor]);
   useEffect(() => {
     if (menu === 'model') modelAnchor.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus({ preventScroll: true });
   }, [menu]);
@@ -169,7 +186,12 @@ export function QuickEditComposer({ board, image, phase, onClose, onSubmit, uplo
 
         </div>
       </div>
-      <div className="quick-edit-submit"><span className="quick-edit-credits"><Icon name="quick-edit-imgIconSystem1" size={16} />{t('30 / 张')}</span><button className="agent-send" disabled={!canSubmit || generating} aria-label={localEdit ? copy.generate : t('发送设计需求')} data-tooltip={localEdit ? copy.generate : t('发送设计需求')} onClick={submit}><Icon name="quick-edit-imgIconGenerateStar" size={24} /></button></div>
+      <div className="quick-edit-submit">
+        <IconButton size="s" icon="tool-input-save-prompt" aria-label={t('保存提示词')} title={t('保存提示词')} disabled={!value.trim()} onClick={event => { setMenu(null); setSavePromptAnchor(event.currentTarget); }} />
+        <IconButton size="s" icon="tool-input-prompt-library" aria-label={t('提示词库')} title={t('提示词库')} onClick={() => { setMenu(null); setPromptLibraryOpen(true); }} />
+        <Divider vertical />
+        <span className="quick-edit-credits"><Icon name="quick-edit-imgIconSystem1" size={16} />{t('30 / 张')}</span><button className="agent-send" disabled={!canSubmit || generating} aria-label={localEdit ? copy.generate : t('发送设计需求')} data-tooltip={localEdit ? copy.generate : t('发送设计需求')} onClick={submit}><Icon name="quick-edit-imgIconGenerateStar" size={24} /></button>
+      </div>
     </div>}
     </div>
     {tryOn && <input ref={modelInput} hidden type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={event => { if (event.target.files?.length) void addFiles(event.target.files); event.target.value = ''; }} />}
@@ -177,5 +199,15 @@ export function QuickEditComposer({ board, image, phase, onClose, onSubmit, uplo
     {shownPicker.value && createPortal(<div onDragEnter={event => event.stopPropagation()} onDragOver={event => event.stopPropagation()} onDragLeave={event => event.stopPropagation()} onDrop={event => event.stopPropagation()}>
       <AssetPicker locale={locale} phase={shownPicker.phase} uploads={[...uploads, ...board.images]} onUpload={onUpload} maxCount={pickerCapacity} excludedUrls={references.map(ref => ref.url)} limitMessage={referenceLimitMessage} onConfirm={item => confirmReferences([item])} onConfirmBatch={confirmReferences} onClose={() => setPickerOpen(false)} />
     </div>, document.body)}
+    {shownPromptLibrary.value && createPortal(<PromptLibrary phase={shownPromptLibrary.phase} entries={savedPrompts} uploads={uploads} onUpload={onUpload} onStore={storePrompts} onNotify={onNotify} onClose={() => setPromptLibraryOpen(false)} onApply={(content, mode) => {
+      onDraftChange(previous => ({ ...previous, value: mode === 'replace' ? content : previous.value ? `${previous.value}${previous.value.endsWith('\n') ? '' : '\n'}${content}` : content }));
+      focusInputAfterApply.current = true;
+      setPromptLibraryOpen(false);
+    }} />, document.body)}
+    {shownSavePrompt.value && createPortal(<SavePrompt anchor={shownSavePrompt.value} phase={shownSavePrompt.phase} onClose={() => setSavePromptAnchor(null)} onSave={async name => {
+      const result = await storePrompts([{ id: crypto.randomUUID(), name, content: value.trim() }, ...savedPrompts]);
+      if (result.ok) { setSavePromptAnchor(null); onNotify('提示词已保存', 'success'); }
+      else onNotify(result.message, 'error');
+    }} />, document.body)}
   </>;
 }

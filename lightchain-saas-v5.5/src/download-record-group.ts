@@ -1,3 +1,5 @@
+import { encodeImage, type DownloadFormat } from './download-image';
+
 type ResultImage = { url: string };
 
 const encoder = new TextEncoder();
@@ -11,23 +13,25 @@ function crc32(bytes: Uint8Array) {
   for (const byte of bytes) value = crcTable[(value ^ byte) & 255] ^ (value >>> 8);
   return (value ^ 0xffffffff) >>> 0;
 }
-function extension(url: string, type: string) {
-  const fromUrl = url.split('?')[0].match(/\.(png|jpe?g|webp|avif|gif)$/i)?.[1];
-  const extensions: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/avif': 'avif', 'image/gif': 'gif' };
-  return fromUrl?.toLowerCase().replace('jpeg', 'jpg') ?? (extensions[type] ?? 'png');
-}
 function safeName(name: string) { return name.replace(/[\\/:*?"<>|]/g, '-').trim() || '任务结果'; }
 
-// ZIP store mode preserves the result files without re-encoding or loading every image into a canvas.
-export async function downloadRecordGroup(images: ResultImage[], title: string) {
+// Re-encode each result in the selected format before adding it to one ZIP.
+export async function downloadRecordGroup(images: ResultImage[], title: string, format: DownloadFormat) {
   if (!images.length) return;
   const chunks: Uint8Array[] = [], directory: Uint8Array[] = [];
   let offset = 0;
   for (let index = 0; index < images.length; index++) {
     const response = await fetch(images[index].url);
     if (!response.ok) throw new Error('下载失败，请重试。');
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    const name = encoder.encode(`${safeName(title)}-${index + 1}.${extension(images[index].url, response.headers.get('content-type')?.split(';')[0] ?? '')}`);
+    const source = URL.createObjectURL(await response.blob());
+    let bytes: Uint8Array;
+    try {
+      const image = new Image();
+      image.src = source;
+      await image.decode();
+      bytes = new Uint8Array(await (await encodeImage(image, format)).arrayBuffer());
+    } finally { URL.revokeObjectURL(source); }
+    const name = encoder.encode(`${safeName(title)}-${index + 1}.${format.toLowerCase()}`);
     const checksum = crc32(bytes);
     const local = new Uint8Array(30 + name.length), localView = new DataView(local.buffer);
     localView.setUint32(0, 0x04034b50, true); localView.setUint16(4, 20, true); localView.setUint16(6, 0x0800, true);

@@ -6,8 +6,18 @@ import { useLocale } from '../LocaleContext';
 import { Icon } from './ui';
 
 type Board = ReturnType<typeof useCanvas>;
+const coverNewUsedKey = 'lightchain-v5.5-project-cover-used';
 export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: () => void }) {
   const { t, locale } = useLocale();
+  const [coverUsed, setCoverUsed] = useState(() => {
+    try { return localStorage.getItem(coverNewUsedKey) === '1'; }
+    catch { return false; }
+  });
+  useEffect(() => {
+    const syncCoverUse = (event: StorageEvent) => { if (event.key === coverNewUsedKey && event.newValue === '1') setCoverUsed(true); };
+    window.addEventListener('storage', syncCoverUse);
+    return () => window.removeEventListener('storage', syncCoverUse);
+  }, []);
   const shown = usePresence(board.contextMenu);
   const [submenu, setSubmenu] = useState<'download' | 'order' | null>(null);
   const sub = usePresence(submenu);
@@ -40,8 +50,9 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
     const rect = button.getBoundingClientRect();
     const edge = root.current!.getBoundingClientRect();
     const targetWidth = kind === 'download' || locale === 'zh-CN' ? 144 : 208;
-    const left = edge.right + targetWidth + 4 > window.innerWidth - 8;
-    setSubPosition({ x: left ? edge.left - targetWidth - 4 : edge.right + 4, y: Math.max(8, Math.min(rect.top - 8, window.innerHeight - 168 - 8)), left });
+    const overlap = 4;
+    const left = edge.right + targetWidth - overlap > window.innerWidth - 8;
+    setSubPosition({ x: left ? edge.left - targetWidth + overlap : edge.right - overlap, y: Math.max(8, Math.min(rect.top - 8, window.innerHeight - 168 - 8)), left });
     setSubmenu(kind);
   };
   const keys = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -69,6 +80,15 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
   </div>;
   const subTrigger = (kind: 'download' | 'order', label: string, icon: string) => <button type="button" role="menuitem" data-sub={kind} aria-haspopup="menu" aria-expanded={submenu === kind} onPointerEnter={e => openSub(kind, e.currentTarget)} onClick={e => openSub(kind, e.currentTarget)}><Icon name={icon} size={20} /><span>{t(label)}</span><Icon name="context-img" size={16} /></button>;
   const item = (label: string, icon: string, action: () => void, shortcut?: string) => <button type="button" role="menuitem" onPointerEnter={() => setSubmenu(null)} onFocus={() => setSubmenu(null)} onClick={() => perform(action)}><Icon name={icon} size={20} /><span>{t(label)}</span>{shortcut && <kbd>{shortcut}</kbd>}</button>;
+  const setProjectCover = () => {
+    const imageId = shown.value?.id;
+    if (!imageId) return;
+    perform(() => {
+      if (!board.setCover(imageId)) return;
+      setCoverUsed(true);
+      try { localStorage.setItem(coverNewUsedKey, '1'); } catch { /* Keep the in-session state. */ }
+    });
+  };
   const index = board.images.findIndex(image => image.id === board.selected);
   return <div ref={root} className="image-context-menu" role="menu" tabIndex={-1} aria-label={t('图片右键菜单')} data-canvas-ui data-workbench-menu data-phase={shown.phase} inert={shown.phase === 'exit'} style={{ left: position.x, top: position.y, width }} onKeyDown={keys} onContextMenu={e => e.preventDefault()}>
     {subTrigger('download', '下载', 'context-imgLeftIcon')}
@@ -76,7 +96,7 @@ export function ImageContextMenu({ board, onUpload }: { board: Board; onUpload: 
     {subTrigger('order', '图层顺序', 'context-imgLeftIcon1')}
     {item('复制', 'context-imgLeftIcon2', board.copySelected, `${modifier} + C`)}
     {item('复制并粘贴', 'context-imgLeftIcon3', board.duplicate, `${modifier} + D`)}
-    {item('设为项目封面', 'context-project-cover', () => board.setCover(shown.value!.id!))}
+    <button type="button" role="menuitem" onPointerEnter={() => setSubmenu(null)} onFocus={() => setSubmenu(null)} onClick={setProjectCover}><Icon name="context-project-cover" size={20} /><span>{t('设为项目封面')}</span>{!coverUsed && <span className="image-context-new-badge">NEW</span>}</button>
     <div className="element-menu-divider" role="separator" />
     {item('删除', 'context-imgLeftIcon5', board.removeSelected, '←/del')}
     {sub.value && <div className={`image-context-menu image-context-submenu ${sub.value === 'download' ? 'element-design-menu download-format-menu' : ''} ${subPosition.left ? 'opens-left' : ''}`} role="menu" aria-label={t(sub.value === 'download' ? '下载格式' : '图层顺序')} data-phase={sub.phase} inert={sub.phase === 'exit'} style={{ left: Math.max(8, subPosition.x), top: subPosition.y, width: subWidth }}>
