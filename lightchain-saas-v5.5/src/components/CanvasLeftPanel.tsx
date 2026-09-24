@@ -125,7 +125,7 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
               <div className="generation-record-heading"><div className="generation-record-heading-text"><h3>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={() => void downloadGroup(record)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget({ kind: 'record', record })} /></div>
               <GenerationRecordTags record={record} active={tab === 'history'} />
               {recordHasPrompt(record) && <div className="generation-record-prompt">
-                <p>{t(record.prompt!)}</p>
+                <p data-tooltip={t(record.prompt!)}>{t(record.prompt!)}</p>
                 <div className="generation-record-actions">
                   <Button onClick={() => setLibraryOpen(true)}><Icon name="generation-record-imgLeftIcon" size={16} />{t('提示词库')}</Button><Divider vertical />
                   <Button aria-haspopup="dialog" aria-expanded={saveTarget?.content === t(record.prompt!)} onClick={event => setSaveTarget({ anchor: event.currentTarget, content: t(record.prompt!) })}><Icon name="generation-record-imgLeftIcon1" size={16} />{t('保存提示词')}</Button><Divider vertical />

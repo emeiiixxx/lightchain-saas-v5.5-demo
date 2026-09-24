@@ -8,7 +8,7 @@
 .lc-tooltip[data-phase] { animation-name: none; }
 .lc-tooltip[data-phase='enter'] > * { animation: ui-enter var(--motion-duration) var(--motion-easing) backwards; }
 .lc-tooltip[data-phase='exit'] > * { animation: ui-exit var(--motion-duration) var(--motion-easing) both; }
-.lc-tooltip-bubble { max-width: 336px; padding: 4px 8px; border-radius: 6px; background: var(--surface-media-overlay-strong); -webkit-backdrop-filter: blur(var(--background-blur-s)); backdrop-filter: blur(var(--background-blur-s)); box-shadow: 0 6px 7px var(--overlay-weak); font-size: 12px; font-weight: 400; line-height: 16px; overflow-wrap: anywhere; }
+.lc-tooltip-bubble { max-width: 336px; padding: 4px 8px; border-radius: 6px; background: var(--surface-media-overlay-strong); -webkit-backdrop-filter: blur(var(--background-blur-s)); backdrop-filter: blur(var(--background-blur-s)); box-shadow: 0 6px 7px var(--overlay-weak); font-size: 12px; font-weight: 400; line-height: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .lc-tooltip-arrow { background: var(--surface-media-overlay-strong); -webkit-backdrop-filter: blur(var(--background-blur-s)); backdrop-filter: blur(var(--background-blur-s)); clip-path: polygon(50% 0, 100% 100%, 0 100%); position: absolute; width: 8px; height: 4px; left: var(--tooltip-arrow-x, 50%); bottom: 0; transform: translateX(-50%) rotate(180deg); }
 .lc-tooltip[data-side='bottom'] { padding: 4px 0 0; }
 .lc-tooltip[data-side='bottom'] .lc-tooltip-arrow { top: 0; bottom: auto; transform: translateX(-50%); }
