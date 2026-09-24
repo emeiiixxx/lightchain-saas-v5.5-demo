@@ -42,6 +42,8 @@ export const workspaceCopy: Record<string, readonly [string, string]> = {
 '删除此条记录': ['Delete this record', 'この記録を削除'],
 '删除确认': ['Confirm deletion', '削除の確認'],
 '删除后不可恢复，是否确认删除？': ['This cannot be undone. Delete this record?', '削除すると元に戻せません。この記録を削除しますか？'],
+'删除当前图片后不可恢复，是否确认删除？': ['This image cannot be restored. Delete it?', 'この画像を削除すると元に戻せません。削除しますか？'],
+'暂无结果图片': ['No result images', '結果画像はありません'],
 '确认删除': ['Delete', '削除する'],
 '收藏到资源库': ['Save to resource library', '素材ライブラリに保存'],
 '提示词名称': ["Prompt name", "プロンプト名"],

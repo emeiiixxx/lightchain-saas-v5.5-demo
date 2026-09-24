@@ -16,9 +16,9 @@ type Props = {
   onSelect: (index: number) => void; onLibrary: () => void;
   onSave: (anchor: HTMLElement, content: string) => void;
   onCopy: (text: string) => void; onNotify: (text: string) => void;
-  onRegenerate: () => void; onDelete: () => void;
+  onRegenerate: () => void; onDeleteImage: () => void;
 };
-export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLibrary, onSave, onCopy, onNotify, onRegenerate, onDelete }: Props) {
+export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLibrary, onSave, onCopy, onNotify, onRegenerate, onDeleteImage }: Props) {
   const { t, locale } = useLocale();
   const [sendOpen, setSendOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -68,7 +68,7 @@ export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLib
       <ElementSendMenu withLabel open={sendOpen} onToggle={() => { setDownloadOpen(false); setSendOpen(value => !value); }} onClose={() => setSendOpen(false)} onSend={unavailable} /><Divider vertical />
       <Button size="s" onClick={unavailable}><Icon name="asset-center" size={16} />{locale === 'en' ? 'Save to assets' : locale === 'ja' ? 'アセットに保存' : '收藏至资源库'}</Button><Divider vertical />
       <DownloadFormatMenu open={downloadOpen} disabled={downloading} onToggle={() => { setSendOpen(false); setDownloadOpen(value => !value); }} onClose={() => setDownloadOpen(false)} onSelect={format => void download(format)} /><Divider vertical />
-      <TaskRecordMoreMenu detail onDelete={onDelete} />
+      <TaskRecordMoreMenu detail onDelete={onDeleteImage} />
     </div>
   </aside>;
 }
