@@ -41,7 +41,7 @@ function ImageProperties({ board, onReplace, onAction, rotationLocked, onNotify 
   const { t } = useLocale();
   if (board.selectedIds.length > 1) return <div className="properties-empty">{t('已选择')} {board.selectedIds.length} {t('张图片')}</div>;
   const item = board.images.find(i => i.id === board.selected);
-  if (!item) return <div className="properties-empty">{t("选择画布中的图片，查看图层属性")}</div>;
+  if (!item) return <div className="properties-empty properties-empty--unselected"><img src="/assets/properties-empty-selection.png" alt="" width={120} height={120} /><p>{t("选择画布中的图片，查看图层属性")}</p></div>;
   const update = (patch: Partial<CanvasImage>) => board.updateSelected(patch, false);
   const field = (label: string, key: 'x' | 'y' | 'width' | 'height', prefix: string) => <NumberField label={label} prefix={prefix} value={item[key]} min={key === 'width' || key === 'height' ? 1 : undefined} begin={board.beginEdit} change={n => update({ [key]: n })} />;
   return <div className="image-properties" key={item.id}>
