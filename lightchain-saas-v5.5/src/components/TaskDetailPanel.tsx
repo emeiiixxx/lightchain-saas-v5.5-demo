@@ -25,6 +25,9 @@ export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLib
   const [sendOpen, setSendOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const assetLabel = locale === 'en' ? 'Save to assets' : locale === 'ja' ? 'アセットに保存' : '保存至资源库';
+  const compactLibraryLabel = locale === 'en' ? 'Prompts' : locale === 'ja' ? 'プロンプト集' : '提示词库';
+  const compactSavePromptLabel = locale === 'en' ? 'Save' : locale === 'ja' ? '保存' : '保存';
   useEffect(() => {
     if (!sendOpen && !downloadOpen) return;
     const outside = (event: PointerEvent) => { if (!(event.target instanceof Element) || !event.target.closest('[data-workbench-menu]')) { setSendOpen(false); setDownloadOpen(false); } };
@@ -60,15 +63,15 @@ export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLib
       {recordHasPrompt(record) && <div className="generation-record-prompt task-detail-prompt">
         <p>{t(record.prompt!)}</p>
         <div className="generation-record-actions">
-          <Button onClick={onLibrary}><Icon name="generation-record-imgLeftIcon" size={16} />{t('提示词库')}</Button><Divider vertical />
-          <Button onClick={event => onSave(event.currentTarget, t(record.prompt!))}><Icon name="generation-record-imgLeftIcon1" size={16} />{t('保存提示词')}</Button><Divider vertical />
+          <Button onClick={onLibrary} aria-label={t('提示词库')} title={t('提示词库')}><Icon name="generation-record-imgLeftIcon" size={16} />{compactLibraryLabel}</Button><Divider vertical />
+          <Button onClick={event => onSave(event.currentTarget, t(record.prompt!))} aria-label={t('保存提示词')} title={t('保存提示词')}><Icon name="generation-record-imgLeftIcon1" size={16} />{compactSavePromptLabel}</Button><Divider vertical />
           <Button onClick={() => onCopy(t(record.prompt!))}><Icon name="generation-record-imgLeftIcon2" size={16} />{t('复制')}</Button>
         </div>
       </div>}
     </div>
     <div className="task-detail-actions">
       <ElementSendMenu withLabel open={sendOpen} onToggle={() => { setDownloadOpen(false); setSendOpen(value => !value); }} onClose={() => setSendOpen(false)} onSend={unavailable} /><Divider vertical />
-      <Button size="s" onClick={unavailable}><Icon name="asset-center" size={16} />{locale === 'en' ? 'Save to assets' : locale === 'ja' ? 'アセットに保存' : '收藏至资源库'}</Button><Divider vertical />
+      <Button size="s" onClick={unavailable} aria-label={assetLabel}><Icon name="asset-center" size={16} />{assetLabel}</Button><Divider vertical />
       <DownloadFormatMenu open={downloadOpen} disabled={downloading} onToggle={() => { setSendOpen(false); setDownloadOpen(value => !value); }} onClose={() => setDownloadOpen(false)} onSelect={format => void download(format)} /><Divider vertical />
       <TaskRecordMoreMenu detail onDelete={onDeleteImage} />
     </div>

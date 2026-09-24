@@ -45,12 +45,12 @@
 .task-detail-panel .generation-record-tag--image { padding-left: 2px; }
 .task-detail-panel .generation-tag-thumb, .task-detail-panel .generation-tag-thumb img { width: 28px; height: 28px; border-radius: 6px; }
 .task-detail-prompt > p { margin: 0; font-size: 14px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere; }
-.task-detail-prompt .generation-record-actions { flex-wrap: wrap; }
+.task-detail-prompt .generation-record-actions { flex-wrap: nowrap; }
 .task-detail-actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-xl); padding: 8px 24px; border-top: 1px solid var(--border-weak); }
-.task-detail-actions > .lc-button, .task-detail-actions :is(.element-send-with-label, .task-download-control, .task-record-more-anchor) > .lc-button { width: auto; height: 32px; min-width: 32px; padding: 0; border: 0; gap: 4px; font-size: 12px; line-height: 20px; font-weight: 500; color: var(--text-tertiary); }
+.task-detail-actions > .lc-button, .task-detail-actions :is(.element-send-with-label, .task-download-control) > .lc-button { width: auto; height: 32px; min-width: 32px; padding: 0; border: 0; gap: 4px; font-size: 12px; line-height: 20px; font-weight: 500; color: var(--text-tertiary); }
 .task-detail-actions > :is(.element-send-with-label, .task-download-control, .task-record-more-anchor) { display: inline-flex; flex: none; }
 .task-detail-actions > .lc-button:is(:hover, :focus-visible, :active):not(:disabled),
-.task-detail-actions :is(.element-send-with-label, .task-download-control, .task-record-more-anchor) > .lc-button:is(:hover, :focus-visible, :active, [aria-expanded='true']):not(:disabled) { background: transparent; color: var(--text-primary); }
+.task-detail-actions :is(.element-send-with-label, .task-download-control) > .lc-button:is(:hover, :focus-visible, :active, [aria-expanded='true']):not(:disabled) { background: transparent; color: var(--text-primary); }
 .task-detail-actions .divider--vertical { height: 16px; }
 @media (max-width: 1100px) {
   .task-detail-panel { width: 320px; }
