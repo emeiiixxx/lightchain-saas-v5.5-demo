@@ -5,6 +5,7 @@ import { useCanvas } from './useCanvas';
 import { TopBar } from './components/TopBar';
 import { DefaultPageUpload } from './components/DefaultPageUpload';
 import { ProjectPanel } from './components/ProjectPanel';
+import { ProjectCard } from './components/ProjectCard';
 import { usePresence } from './usePresence';
 import { AssetPicker } from './components/AssetPicker';
 import type { LibraryImage } from './asset-library';
@@ -29,6 +30,8 @@ export default function App() {
   const notify = useCallback((message: string) => { setToast(t(message)); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(''), 3500); }, [t]);
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
   const board = useCanvas(notify, theme, locale);
+  const [projectUpdatedAt, setProjectUpdatedAt] = useState(Date.now);
+  useEffect(() => { setProjectUpdatedAt(Date.now()); }, [board.images, title]);
   const replaceTarget = useRef<string | null>(null);
   const shownModal = usePresence(modal);
   const shownToast = usePresence(toast || null);
@@ -59,6 +62,6 @@ export default function App() {
     </main>
     {shownToast.value && <div popover="manual" ref={element => { if (element && !element.matches(':popover-open')) element.showPopover(); }} data-phase={shownToast.phase} className="toast" role="status">{shownToast.value}</div>}
     {shownModal.value === 'upload' && <AssetPicker locale={locale} phase={shownModal.phase} uploads={uploads} onUpload={rememberUpload} onClose={() => setModal(null)} onConfirm={image => confirmImages([image])} onConfirmBatch={replaceTarget.current ? undefined : confirmImages} />}
-    {shownModal.value && shownModal.value !== 'upload' && <Dialog phase={shownModal.phase} title={shownModal.value === 'project' ? t("项目概览") : shownModal.value === 'help' ? t("画布操作指南") : shownModal.value === 'support' ? t("联系客服") : t("积分账户")} onClose={() => setModal(null)}>{shownModal.value === 'project' ? <><div className="project-summary p-4 rounded-xl mb-4"><p className="font-medium mb-1">{title}</p>{board.projectCover && <img className="project-cover" src={board.projectCover.url} alt={t("项目封面")} />}<p className="text-xs text-muted">{t("设计生产工作台 ·")}{board.images.length} {t("张图片")}</p></div><p className="text-xs leading-5 text-muted">{t("当前项目仅保留在本次打开的页面中。")}</p><div className="flex justify-end mt-6"><Button variant="outline" onClick={() => setModal(null)}>{t("返回画布")}</Button></div></> : shownModal.value === 'help' ? <div className="help-content"><p>{t("点击素材卡，或者将图片拖入画布，开始设计。")}</p><dl><dt>{t("平移画布")}</dt><dd>{t("空格 + 拖动 / 手形工具 / 中键拖动 / 滚轮")}</dd><dt>{t("缩放画布")}</dt><dd>{t("⌘ / Ctrl / Option / Alt + 滚轮，或触控板捏合")}</dd><dt>{t("移动图片")}</dt><dd>{t("按住图片拖动")}</dd><dt>{t("恢复 100% / 适应画布")}</dt><dd>1 / 2</dd><dt>{t("删除选中图片")}</dt><dd>Delete / Backspace</dd><dt>{t("撤销上传、移动、删除")}</dt><dd>⌘ / Ctrl + Z</dd></dl><p className="muted">{t("当前 Demo 的图片仅保留在本次打开的页面中。")}</p></div> : shownModal.value === 'support' ? <p className="muted">{t("当前为设计生产工作台 Demo，暂未接入在线客服。")}</p> : <div><p className="muted">{t("演示账户可用积分")}</p><p className="text-3xl font-medium my-4">99,999</p><p className="muted">{t("当前 Demo 暂未接入积分购买。")}</p></div>}</Dialog>}
+    {shownModal.value && shownModal.value !== 'upload' && <Dialog phase={shownModal.phase} title={shownModal.value === 'project' ? t("项目概览") : shownModal.value === 'help' ? t("画布操作指南") : shownModal.value === 'support' ? t("联系客服") : t("积分账户")} onClose={() => setModal(null)}>{shownModal.value === 'project' ? <><div className="project-card-preview-area"><ProjectCard name={title} coverUrl={board.projectCover?.url} updatedAt={projectUpdatedAt} onNameChange={setTitle} onOpen={() => setModal(null)} /></div><p className="text-xs leading-5 text-muted">{t("当前项目仅保留在本次打开的页面中。")}</p><div className="flex justify-end mt-6"><Button variant="outline" onClick={() => setModal(null)}>{t("返回画布")}</Button></div></> : shownModal.value === 'help' ? <div className="help-content"><p>{t("点击素材卡，或者将图片拖入画布，开始设计。")}</p><dl><dt>{t("平移画布")}</dt><dd>{t("空格 + 拖动 / 手形工具 / 中键拖动 / 滚轮")}</dd><dt>{t("缩放画布")}</dt><dd>{t("⌘ / Ctrl / Option / Alt + 滚轮，或触控板捏合")}</dd><dt>{t("移动图片")}</dt><dd>{t("按住图片拖动")}</dd><dt>{t("恢复 100% / 适应画布")}</dt><dd>1 / 2</dd><dt>{t("删除选中图片")}</dt><dd>Delete / Backspace</dd><dt>{t("撤销上传、移动、删除")}</dt><dd>⌘ / Ctrl + Z</dd></dl><p className="muted">{t("当前 Demo 的图片仅保留在本次打开的页面中。")}</p></div> : shownModal.value === 'support' ? <p className="muted">{t("当前为设计生产工作台 Demo，暂未接入在线客服。")}</p> : <div><p className="muted">{t("演示账户可用积分")}</p><p className="text-3xl font-medium my-4">99,999</p><p className="muted">{t("当前 Demo 暂未接入积分购买。")}</p></div>}</Dialog>}
   </div>;
 }

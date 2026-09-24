@@ -247,7 +247,6 @@ html:not([lang='zh-CN']) .upload-hover-copy { max-width: 640px; padding: 0 16px;
 .image-context-submenu { z-index: 61; }
 .image-context-submenu::before { content: ''; position: absolute; right: 100%; top: 0; width: 6px; height: 100%; }
 .image-context-submenu.opens-left::before { left: 100%; right: auto; }
-.project-cover { width: 96px; height: 96px; object-fit: cover; border-radius: var(--radius-base); margin: 12px 0; }
 
 /* Shortcut reference panel, Figma 44:2782. */
 .shortcuts-anchor { position: relative; }

@@ -41,7 +41,6 @@ button:disabled { opacity: .4; cursor: default; }
 .project-input:hover { background: var(--state-default); }
 .project-input:focus { outline: none; border-color: var(--brand-primary); }
 .text-muted { color: var(--text-tertiary); }
-.project-summary { background: var(--state-default); }
 .sidebar-toggle { position: absolute; z-index: 7; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: var(--radius-l); background: var(--surface-default); border-color: var(--border-weak); box-shadow: var(--shadow-l); color: var(--text-secondary); }
 .sidebar-toggle .icon { width: 24px !important; height: 24px !important; }
 .welcome { position: absolute; left: 50%; top: 50%; width: 800px; transform: translate(-50%, -50%); padding-bottom: 24px; display: flex; flex-direction: column; align-items: center; pointer-events: none; text-align: center; }
