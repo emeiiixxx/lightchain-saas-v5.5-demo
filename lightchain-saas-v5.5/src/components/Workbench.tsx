@@ -247,6 +247,14 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     switcher.querySelectorAll('button').forEach(button => observer.observe(button));
     return () => observer.disconnect();
   }, [shownPanel.value, tab, locale]);
+  useEffect(() => {
+    if (menu !== 'conversations') return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!(event.target instanceof Element) || !event.target.closest('.conversation-menu-anchor')) setMenu(null);
+    };
+    window.addEventListener('pointerdown', closeOutside, true);
+    return () => window.removeEventListener('pointerdown', closeOutside, true);
+  }, [menu]);
   const shownMenu = usePresence(menu);
   const zoomPercent = Math.round(board.camera.zoom * 100);
   const zoomOptions = [...new Set([10, 30, 50, 100, 200, zoomPercent])].sort((a, b) => a - b);
@@ -362,8 +370,8 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       <header className="right-panel-header"><div ref={switcherRef} className="right-panel-switcher" role="tablist" aria-label={t("右侧面板")}><span className="switcher-indicator" style={indicatorStyle} aria-hidden="true" />{(['agent', 'properties'] as const).map((value, i) => <button key={value} role="tab" id={`panel-tab-${value}`} aria-controls="right-panel-content" aria-selected={tab === value} tabIndex={tab === value ? 0 : -1} onClick={() => setTab(value)} onKeyDown={e => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) { e.preventDefault(); const next = tab === 'agent' ? 'properties' : 'agent'; setTab(next); document.getElementById(`panel-tab-${next}`)?.focus(); } }}><Icon name={i ? 'prop-imgLeftSlot1' : 'prop-imgLeftSlot'} size={16} />{i ? t("图层属性") : t("AI助手")}</button>)}</div><Tool icon="sidebar" label={t("收起右侧栏")} size={24} onClick={() => onOpenChange(false)} /></header>
       <div id="right-panel-content" role="tabpanel" aria-labelledby={`panel-tab-${tab}`} className="right-panel-content">
         {tab === 'properties' ? <div inert={!!localEdit}><ImageProperties board={board} onNotify={onNotify} rotationLocked={rotationLocked} onReplace={onReplace} onAction={entry => entry === t("局部编辑") ? elementAction("款式", "局部修改") : action(entry)} /></div> : <>
-          <div className="conversation-bar" data-workbench-menu>
-            <div className="conversation-menu-anchor">
+          <div className="conversation-bar">
+            <div className="conversation-menu-anchor" data-workbench-menu>
               <Button className="conversation-trigger" aria-haspopup="menu" aria-controls="conversation-history-menu" aria-expanded={menu === 'conversations'} onClick={() => toggleMenu('conversations')} onKeyDown={event => {
                 if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
                 event.preventDefault(); setMenu('conversations');
