@@ -637,7 +637,7 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
     const leave = () => { hoverPoint.current = null; updateMoveCursor(); };
     const up = (event?: PointerEvent) => {
       const drag = gesture.current;
-      if (event?.type === 'pointerup' && quickEditing.current && drag?.blank && drag.primary && !drag.moved) setBlankClickVersion(value => value + 1);
+      if (event?.type === 'pointerup' && drag?.blank && drag.primary && !drag.moved) setBlankClickVersion(value => value + 1);
       gesture.current = null; setMarquee(null); setPanning(false); updateMoveCursor();
     };
     const keydown = (e: KeyboardEvent) => {

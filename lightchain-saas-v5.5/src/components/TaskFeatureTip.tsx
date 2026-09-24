@@ -5,11 +5,12 @@ import { usePresence } from '../usePresence';
 import { IconButton } from './ui';
 import './task-feature-tip.css';
 
-export function TaskFeatureTip({ expanded }: { expanded: boolean }) {
+export function TaskFeatureTip({ expanded, blankClickVersion }: { expanded: boolean; blankClickVersion: number }) {
   const { locale } = useLocale();
   // Demo only: dismissal lasts until reload. Production persists this per user.
   const [dismissed, setDismissed] = useState(false);
-  const shown = usePresence(dismissed ? null : true);
+  const initialBlankClick = useRef(blankClickVersion);
+  const shown = usePresence(dismissed || blankClickVersion !== initialBlankClick.current ? null : true);
   const root = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   useLayoutEffect(() => {
