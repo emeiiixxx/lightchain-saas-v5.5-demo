@@ -348,7 +348,7 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 .task-record-more-anchor > .lc-icon-button[aria-expanded='true'] { background: var(--state-hover); color: var(--text-primary); }
 .generation-record-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-xs); }
 .generation-record-tag { display: inline-flex; align-items: center; gap: var(--spacing-xs); min-height: var(--height-xl); padding: 2px var(--spacing-xs); border-radius: 6px; background: var(--state-hover); color: var(--text-secondary); font-size: 12px; line-height: 20px; font-weight: 500; }
-.generation-record-tag:not(.generation-record-tag--image):not(:has(> img)) { padding-inline: var(--spacing-base); }
+.generation-record-tag:not(.generation-record-tag--image):not(.generation-record-tag--color):not(:has(> img)) { padding-inline: var(--spacing-base); }
 .generation-record-tag:has(> img) { padding-left: 2px; }
 .generation-record-tag img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
 .generation-record-prompt { display: flex; flex-direction: column; gap: var(--spacing-base); padding: 12px 12px 8px; border-radius: var(--radius-l); background: var(--surface-secondary); }
@@ -425,8 +425,9 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 .element-design-menu.element-send-submenu::before { content: none; }
 
 /* Reuse the v5.3 AI try-on history image bubble treatment. */
-.generation-record-tag.generation-record-tag--image { padding: 2px var(--spacing-xs); padding-right: var(--spacing-base); }
-.generation-tag-thumb { display: block; flex-shrink: 0; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; overflow: hidden; background: transparent; cursor: default; }
+.generation-record-tag.generation-record-tag--image, .generation-record-tag.generation-record-tag--color { padding: 2px var(--spacing-xs); padding-right: var(--spacing-base); }
+.generation-tag-thumb, .generation-record-color-swatch { display: block; flex-shrink: 0; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; overflow: hidden; }
+.generation-tag-thumb { background: transparent; cursor: default; }
 .generation-tag-preview { position: fixed; z-index: 1000; display: flex; padding: 4px; border-radius: 8px; background: var(--surface-floating); box-shadow: 0 8px 24px var(--overlay-weak), 0 0 0 1px var(--border-weak); }
 .generation-tag-preview > img { display: block; flex: none; width: auto; max-width: none; max-height: 240px; border-radius: 4px; object-fit: contain; }
 
@@ -453,5 +454,3 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 .model-upload-menu > .lc-button:hover, .model-upload-menu > .lc-button:focus-visible { background: var(--brand-primary); color: var(--text-on-brand-black); }
 .model-upload-menu > .lc-button:active { background: var(--state-selected-brand); }
 
-.generation-record-tag.generation-record-tag--color { padding: 2px 4px 2px 2px; }
-.generation-record-color-swatch { width: 20px; height: 20px; flex: none; border-radius: var(--radius-s); }
