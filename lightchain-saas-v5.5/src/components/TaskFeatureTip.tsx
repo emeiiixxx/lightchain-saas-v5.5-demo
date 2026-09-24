@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useLocale } from '../LocaleContext';
-import { MOTION_DURATION } from '../motion';
 import { usePresence } from '../usePresence';
 import { IconButton } from './ui';
 import './task-feature-tip.css';
@@ -10,15 +9,16 @@ export function TaskFeatureTip({ expanded, blankClickVersion }: { expanded: bool
   // Demo only: dismissal lasts until reload. Production persists this per user.
   const [dismissed, setDismissed] = useState(false);
   const initialBlankClick = useRef(blankClickVersion);
-  const shown = usePresence(dismissed || blankClickVersion !== initialBlankClick.current ? null : true);
+  const shown = usePresence(dismissed || expanded || blankClickVersion !== initialBlankClick.current ? null : true);
+  useLayoutEffect(() => { if (expanded) setDismissed(true); }, [expanded]);
   const root = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   useLayoutEffect(() => {
-    if (!shown.value) return;
-    const anchor = document.getElementById(expanded ? 'left-panel-tab-history' : 'canvas-task-entry');
+    if (!shown.value || expanded) return;
+    const anchor = document.getElementById('canvas-task-entry');
     const bubble = root.current;
     if (!anchor || !bubble) return;
-    const edge = anchor.closest(expanded ? '.canvas-left-panel' : '.left-tools') ?? anchor;
+    const edge = anchor.closest('.left-tools') ?? anchor;
     const update = () => {
       const button = anchor.getBoundingClientRect();
       const boundary = edge.getBoundingClientRect();
@@ -32,15 +32,7 @@ export function TaskFeatureTip({ expanded, blankClickVersion }: { expanded: bool
     const observer = new ResizeObserver(update);
     observer.observe(anchor); observer.observe(edge); observer.observe(bubble);
     window.addEventListener('resize', update);
-    // Follow the sidebar's existing entrance motion without adding a second animation.
-    let frame = 0;
-    const started = performance.now();
-    const follow = () => {
-      update();
-      if (performance.now() - started < MOTION_DURATION) frame = requestAnimationFrame(follow);
-    };
-    frame = requestAnimationFrame(follow);
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener('resize', update); };
+    return () => { observer.disconnect(); window.removeEventListener('resize', update); };
   }, [expanded, locale, shown.value]);
   if (!shown.value) return null;
   const label = locale === 'en' ? '🎉 Task history is here. Find your completed results anytime.' : locale === 'ja' ? '🎉 タスク履歴が登場。完了した結果をいつでも確認できます' : '🎉 新增任务记录，随时找回已完成的结果';
