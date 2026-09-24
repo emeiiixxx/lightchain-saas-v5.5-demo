@@ -448,13 +448,22 @@ export function useCanvas(notify: (message: string) => void, theme: 'dark' | 'li
   }, [fit, remember, worldPoint, finishPlacement]);
 
   // Reserve results beside the source (or its whole group), then push only collisions right.
-  const beginGeneration = useCallback((sourceId: string, count: number, ratio: string) => {
+  const beginGeneration = useCallback((sourceId: string | undefined, count: number, ratio: string, fallback?: { name: string }) => {
     finishPlacement();
-    const state = live.current, source = state.images.find(item => item.id === sourceId);
-    if (!source || source.generating) return [];
+    const state = live.current, existingSource = state.images.find(item => item.id === sourceId);
+    if (existingSource?.generating || (!existingSource && !fallback)) return [];
+    // Historical tasks can outlive their canvas input. Reserve a result batch
+    // after existing content, or at the viewport center on an empty canvas.
+    const content = state.images.length ? selectionBounds(state.images) : null;
+    const center = { x: (state.size.width / 2 - state.camera.x) / state.camera.zoom, y: (state.size.height / 2 - state.camera.y) / state.camera.zoom };
+    const source: CanvasImage = existingSource ?? {
+      id: sourceId ?? crypto.randomUUID(), name: fallback!.name, image: new Image(), url: '',
+      x: content ? content.x + content.width : center.x - 240,
+      y: content?.y ?? center.y - 200, width: 0, height: 400, addedAt: nextCanvasTime(),
+    };
     const [rw, rh] = ratio.split(':').map(Number);
     const height = source.height;
-    const width = rw > 0 && rh > 0 ? height * rw / rh : source.width;
+    const width = rw > 0 && rh > 0 ? height * rw / rh : source.width || 400;
     const anchor = selectionBounds(source.groupId ? state.images.filter(image => image.groupId === source.groupId) : [source]);
     const gap = 40, x = anchor.x + anchor.width + gap, y = anchor.y;
     const batchId = crypto.randomUUID();

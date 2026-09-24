@@ -172,7 +172,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     const time = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const isPrint = independent && localEditTool === '印花上身';
     const supportsPrompt = !isPrint;
-    setGenerationRecords(previous => [{ id, title: independent ? `款式 - ${localEditTool}` : '快捷编辑', time, supportsPrompt, printMode: isPrint ? (draft.printMode ?? 'position') : undefined, prompt: supportsPrompt ? (draft.value.trim() || undefined) : undefined, generating: true, count, resultHeight: 92 * placeholders[0].height / placeholders[0].width, ratio: draft.ratio, resolution: draft.resolution, tags: [{ label: '服装图', image: source.url }, ...draft.references.map(ref => ({ label: independent && localEditTool === 'AI试衣' ? '模特图' : independent && localEditTool === '印花上身' ? '印花图' : '参考图', image: ref.url })), ...(isPrint ? [{ label: draft.printMode === 'repeat' ? '满印' : '指定位置' }] : [])], images: [] }, ...previous]);
+    setGenerationRecords(previous => [{ id, sourceId, title: independent ? `款式 - ${localEditTool}` : '快捷编辑', time, supportsPrompt, printMode: isPrint ? (draft.printMode ?? 'position') : undefined, prompt: supportsPrompt ? (draft.value.trim() || undefined) : undefined, generating: true, count, resultHeight: 92 * placeholders[0].height / placeholders[0].width, ratio: draft.ratio, resolution: draft.resolution, tags: [{ label: '服装图', image: source.url }, ...draft.references.map(ref => ({ label: independent && localEditTool === 'AI试衣' ? '模特图' : independent && localEditTool === '印花上身' ? '印花图' : '参考图', image: ref.url })), ...(isPrint ? [{ label: draft.printMode === 'repeat' ? '满印' : '指定位置' }] : [])], images: [] }, ...previous]);
     if (!independent) setConversation(previous => [...previous, request]);
     setHasUnreadGeneration(leftTab !== 'history');
     setQuickEdit(null);
@@ -196,6 +196,34 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       onNotify('图片加载失败，请重试');
     } finally {
       generatingSources.current.delete(sourceId);
+    }
+  };
+  const regenerateRecord = async (record: GenerationRecord) => {
+    const source = board.images.find(image => !image.generating && image.id === record.sourceId) ?? board.images.find(image => !image.generating && image.url === record.tags.find(tag => tag.image)?.image);
+    const count = record.count ?? Math.max(1, record.images.length);
+    const ratio = record.ratio && record.ratio !== 'auto' ? record.ratio : `92:${record.images[0]?.height ?? record.resultHeight ?? 92}`;
+    const placeholders = board.beginGeneration(source?.id ?? record.sourceId, count, ratio, { name: record.title });
+    if (!placeholders.length) return;
+    const id = crypto.randomUUID();
+    const now = new Date();
+    const time = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    setGenerationRecords(previous => [{ ...record, id, sourceId: source?.id ?? record.sourceId, time, generating: true, pending: false, failed: false, count, ratio, resultHeight: 92 * placeholders[0].height / placeholders[0].width, images: [], tags: record.tags.map(tag => ({ ...tag })) }, ...previous]);
+    setHasUnreadGeneration(leftTab !== 'history');
+    const delay = new Promise<void>(resolve => {
+      const timer = setTimeout(() => { generationTimers.current.delete(timer); resolve(); }, 3000);
+      generationTimers.current.add(timer);
+    });
+    try {
+      const [assets] = await Promise.all([prepareDemoResults(), delay]);
+      if (!generationMounted.current) return;
+      const results = Array.from({ length: count }, (_, index) => assets[index % assets.length]);
+      board.finishGeneration(placeholders.map(item => item.id), results);
+      setGenerationRecords(previous => previous.map(item => item.id === id ? { ...item, generating: false, images: results.map((result, index) => ({ url: result.url, height: record.images[index]?.height ?? (placeholders[index] ? 92 * placeholders[index].height / placeholders[index].width : 92) })) } : item));
+    } catch {
+      if (!generationMounted.current) return;
+      board.finishGeneration(placeholders.map(item => item.id), null);
+      setGenerationRecords(previous => previous.map(item => item.id === id ? { ...item, generating: false, failed: true } : item));
+      onNotify('图片加载失败，请重试');
     }
   };
   const quickEditVisible = usePresence(quickEdit === board.selected ? quickEdit : null);
@@ -284,7 +312,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
       <Tool icon="canvas-imgIconSystem6" label={t("资产")} size={24} onClick={() => openLeftPanel('assets')} />
       <Tool id="canvas-task-entry" icon="canvas-imgIcon2" label={t("任务")} size={24} unread={hasUnreadGeneration} onClick={() => openLeftPanel('history')} />
     </div>}
-    <CanvasLeftPanel layersDisabled={!!localEdit} tab={leftTab} hasSelectedElement={board.selectedIds.length > 0} onTabChange={openLeftPanel} onClose={() => setLeftTab(null)} records={generationRecords} unread={hasUnreadGeneration} uploads={uploads} onUpload={onRememberUpload} onNotify={onNotify} />
+    <CanvasLeftPanel layersDisabled={!!localEdit} tab={leftTab} hasSelectedElement={board.selectedIds.length > 0} onTabChange={openLeftPanel} onClose={() => setLeftTab(null)} records={generationRecords} unread={hasUnreadGeneration} uploads={uploads} onUpload={onRememberUpload} onNotify={onNotify} onRegenerate={record => void regenerateRecord(record)} onDeleteRecord={id => setGenerationRecords(previous => previous.filter(record => record.id !== id))} />
     <TaskFeatureTip expanded={!!leftTab} blankClickVersion={board.blankClickVersion} />
     <div ref={bottomToolsRef} className="bottom-tools wb-surface" data-canvas-ui data-phase={phase} role="toolbar" aria-label={t("画布工具栏")} style={{ '--bottom-tools-shift': `${bottomToolsShift}px`, '--bottom-tools-bottom': `${bottomToolsBottom}px` } as CSSProperties}>
       <Tool disabled={!!localEdit} icon="canvas-imgIconEditor" label={t("选择 V")} active={board.effectiveMode === 'select'} onClick={() => board.setMode('select')} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor1" label={t("抓手 H")} active={board.effectiveMode === 'hand'} onClick={() => board.setMode('hand')} />
