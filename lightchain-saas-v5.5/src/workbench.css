@@ -325,7 +325,7 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 .generation-record-heading h3 { margin: 0; font: inherit; color: var(--text-secondary); }
 .generation-record-heading time { color: var(--text-tertiary); white-space: nowrap; }
 .generation-record-heading .task-record-more-anchor { flex: none; }
-.task-record-more-menu.element-design-menu { position: fixed; width: max-content; min-width: 160px; max-width: calc(100vw - 16px); padding: 8px; gap: 4px; margin: 0; }
+.task-record-more-menu.element-design-menu { position: fixed; width: max-content; min-width: 160px; max-width: calc(100vw - 16px); padding: 8px; gap: 4px; margin: 0; background: var(--surface-secondary); }
 .task-record-more-menu.element-design-menu button { width: 100%; }
 .task-record-more-menu.element-design-menu button:disabled { opacity: .4; cursor: not-allowed; }
 .task-record-more-menu.element-design-menu::before { content: none; }
