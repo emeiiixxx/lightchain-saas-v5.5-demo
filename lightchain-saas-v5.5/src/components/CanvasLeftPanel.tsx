@@ -27,36 +27,6 @@ export type GenerationRecord = {
   resultHeight?: number;
   images: { url: string; height: number }[];
 };
-// Preserve each Figma source image's actual format. New URLs also reset failed image requests.
-const jpegAssets = new Set(['imgImageAsset1', 'imgAsset4', 'imgAsset5', 'imgAsset6']);
-const asset = (name: string) => `/assets/generation-record-${name}.${jpegAssets.has(name) ? 'jpg' : 'png'}`;
-const demoRecords: GenerationRecord[] = [
-  { id: 'figma-variation', title: '款式 - 款式裂变', time: '2026-09-22 09:29', count: 8,
-    tags: [{ label: '服装图', image: asset('imgImageAsset') }, ...['连衣裙', '深V领', '前中系带', '短款长度', '飘逸垂坠', '发散程度：中'].map(label => ({ label }))],
-    images: ['imgAsset', 'imgAsset1', 'imgAsset2', 'imgAsset3', 'imgAsset4', 'imgAsset5', 'imgAsset6', 'imgImageAsset'].map(name => ({ url: asset(name), height: 120 })),
-  },
-  { id: 'figma-fabric', title: '款式 - 局部修改有prompt示例', time: '2026-09-22 09:29', count: 1,
-    tags: [{ label: '服装图', image: asset('imgImageAsset1') }, { label: '参考图', image: asset('imgImageAsset2') }],
-    prompt: '参考图2面料的颜色与质感，让图1的服装面料变成图2的质感与颜色，款式可以适当微调，比如领口可以更加V，袖口可以加长，保持灯笼袖，开口',
-    images: [{ url: asset('imgAsset4'), height: 164 }],
-  },
-  { id: 'figma-colors', title: '款式 - 局部修改有prompt示例', time: '2026-09-22 09:29', count: 2,
-    tags: [{ label: '服装图', image: asset('imgImageAsset1') }],
-    prompt: '帮我换两个颜色看看，紫色，小碎花',
-    images: ['imgAsset5', 'imgAsset6'].map(name => ({ url: asset(name), height: 92 })),
-  },
-];
-// Seven additional demo entries reuse the available design assets and prompt examples.
-const additionalDemoRecords: GenerationRecord[] = [4, 2, 1, 8, 4, 1, 2].map((count, index) => {
-  const source = demoRecords[count >= 4 ? 0 : count === 1 ? 1 : 2];
-  return {
-    ...source,
-    id: `demo-record-${index + 4}`,
-    time: `2026-09-22 09:${String(26 - index * 3).padStart(2, '0')}`,
-    count,
-    images: source.images.slice(0, count),
-  };
-});
 const tabs = [
   { value: 'layers', label: '图层', en: 'Layers', ja: 'レイヤー', icon: 'generation-record-imgDefaultIcon' },
   { value: 'assets', label: '资产', en: 'Assets', ja: '素材', icon: 'generation-record-imgDefaultIcon1' },
@@ -81,8 +51,6 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
   const [preview, setPreview] = useState<{ image: CanvasImage; record: GenerationRecord; index: number } | null>(null);
   const shownPreview = usePresence(preview);
   const previewRequest = useRef(0);
-  const [deletedDemoIds, setDeletedDemoIds] = useState<string[]>([]);
-  const [demoResultOverrides, setDemoResultOverrides] = useState<Record<string, GenerationRecord['images']>>({});
   const [deleteTarget, setDeleteTarget] = useState<{ kind: 'record'; record: GenerationRecord } | { kind: 'image'; record: GenerationRecord; index: number } | null>(null);
   const shownDelete = usePresence(deleteTarget);
   useLayoutEffect(() => {
@@ -112,18 +80,16 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
       if (request === previewRequest.current) setPreview({ image: { ...image, x: 0, y: 0 }, record, index });
     } catch { if (request === previewRequest.current) { onNotify('图片加载失败，请重试'); if (closeOnError) setPreview(null); } }
   };
-  const allRecords = [...records, ...demoRecords, ...additionalDemoRecords].filter(record => !deletedDemoIds.includes(record.id)).map(record => demoResultOverrides[record.id] ? { ...record, images: demoResultOverrides[record.id] } : record);
+  const allRecords = records;
   const deleteRecord = (record: GenerationRecord) => {
-    if (record.id.startsWith('figma-') || record.id.startsWith('demo-record-')) setDeletedDemoIds(previous => [...previous, record.id]);
-    else onDeleteRecord(record.id);
+    onDeleteRecord(record.id);
     if (preview?.record.id === record.id) { previewRequest.current++; setPreview(null); }
   };
   const deleteResult = (record: GenerationRecord, index: number) => {
     const current = allRecords.find(item => item.id === record.id);
     if (!current || !current.images[index]) return;
     const images = current.images.filter((_, imageIndex) => imageIndex !== index);
-    if (record.id.startsWith('figma-') || record.id.startsWith('demo-record-')) setDemoResultOverrides(previous => ({ ...previous, [record.id]: images }));
-    else onDeleteResult(record.id, index);
+    onDeleteResult(record.id, index);
     // Keep the task and its original generation parameters; only remove this result.
     previewRequest.current++;
     if (!images.length) setPreview(null);
@@ -150,7 +116,10 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
         <IconButton className="left-panel-close" size="l" icon="generation-record-imgIcon" aria-label={t('收起左侧栏')} onClick={onClose} />
       </header>
       <div id="left-panel-content" className="left-panel-content" role="tabpanel" aria-labelledby={`left-panel-tab-${shown.value}`}>
-        {shown.value !== 'history' ? <div className="left-panel-placeholder">{shown.value === 'layers' && !hasSelectedElement ? t('暂无图层') : demoNotice(locale)}</div> : <div className="generation-record-list">
+        {shown.value !== 'history' ? <div className="left-panel-placeholder">{shown.value === 'layers' && !hasSelectedElement ? t('暂无图层') : demoNotice(locale)}</div>  : !allRecords.length ? <div className="generation-record-empty" data-node-id="163:11702">
+          <img src="/assets/task-record-empty.png" alt="" width={128} height={128} />
+          <div className="generation-record-empty-copy"><h3>{t('暂无任务记录')}</h3><p>{t('上传图片开始你的设计')}</p></div>
+        </div> : <div className="generation-record-list">
           {allRecords.map((record, index) => <article className="generation-record" key={record.id}>
             <div className="generation-record-info">
               <div className="generation-record-heading"><div className="generation-record-heading-text"><h3>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={() => void downloadGroup(record)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget({ kind: 'record', record })} /></div>

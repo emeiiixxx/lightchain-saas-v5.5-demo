@@ -140,6 +140,7 @@ body:has(.handle-rotate[data-rotating='true']), body:has(.handle-rotate[data-rot
 .stroke-color-row .property-number { width: 64px; padding: 0 4px; }
 .stroke-color-row .workbench-tool { width: 32px; background: var(--state-default); }
 .properties-empty { padding: 40px 24px; text-align: center; color: var(--text-tertiary); font-size: 14px; }
+.properties-content { display: flex; flex: 1; min-height: 0; flex-direction: column; overflow-y: auto; }
 .properties-empty--unselected { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .properties-empty--unselected > img { display: block; width: 120px; height: 120px; flex: none; object-fit: contain; }
 .properties-empty--unselected > p { margin: 0; line-height: 20px; }
@@ -326,6 +327,11 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 /* Only the content scrolls; the sibling tab header stays fixed above it. */
 .left-panel-content { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
 .left-panel-placeholder { min-height: 160px; height: 100%; display: flex; align-items: center; justify-content: center; padding: var(--spacing-3xl); text-align: center; font-size: 14px; line-height: 20px; color: var(--text-tertiary); }
+.generation-record-empty { min-height: 100%; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.generation-record-empty > img { display: block; width: 128px; height: 128px; flex: none; object-fit: contain; }
+.generation-record-empty-copy { display: flex; flex-direction: column; gap: 4px; }
+.generation-record-empty h3 { margin: 0; font-size: 16px; font-weight: 500; line-height: 24px; color: var(--text-tertiary); }
+.generation-record-empty p { margin: 0; font-size: 12px; font-weight: 400; line-height: 16px; color: var(--text-placeholder); }
 .generation-record-list { display: flex; flex-direction: column; gap: var(--spacing-xl); padding: var(--spacing-xl); }
 .generation-record { display: flex; flex-direction: column; gap: var(--spacing-base); }
 .generation-record:not(:last-child) { padding-bottom: var(--spacing-xl); border-bottom: 1px solid var(--border-weak); }
