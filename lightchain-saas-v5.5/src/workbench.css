@@ -353,6 +353,7 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 .generation-record-tag img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
 .generation-record-prompt { display: flex; flex-direction: column; gap: var(--spacing-base); padding: 12px 12px 8px; border-radius: var(--radius-l); background: var(--surface-secondary); }
 .generation-record-prompt > p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-secondary); font-size: 14px; line-height: 20px; }
+.generation-record-list .generation-record-prompt > p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; line-clamp: 5; overflow: hidden; }
 .generation-record-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-base); }
 .generation-record-actions .lc-button { min-width: 24px; height: 24px; padding: 0; gap: var(--spacing-xs); border-radius: 4px; font-size: 12px; line-height: 20px; color: var(--text-tertiary); }
 .generation-record-actions .lc-button:hover, .generation-record-actions .lc-button[aria-pressed='true'] { color: var(--text-primary); background: transparent; }
