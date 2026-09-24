@@ -74,7 +74,7 @@ body:has(.handle-rotate[data-rotating='true']), body:has(.handle-rotate[data-rot
 .switcher-indicator { position: absolute; pointer-events: none; border: 1px solid var(--panel-switch-border); border-radius: 100px; background: var(--panel-switch-gradient); transition-property: left, top, width, height; }
 .right-panel-content { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .conversation-bar { height: 56px; flex: none; padding: 12px; display: flex; justify-content: space-between; align-items: center; position: relative; }
-.conversation-bar > .lc-button { font-size: 14px; font-weight: 400; height: 40px; padding: 0 12px; gap: 8px; }
+.conversation-bar > .lc-button, .conversation-trigger { font-size: 14px; font-weight: 400; height: 40px; padding: 0 12px; gap: 8px; }
 .conversation-bar > .workbench-tool { width: 40px; padding: 0; }
 .agent-content { flex: 1; min-height: 0; padding: 16px 24px; overflow: auto; }
 .agent-content h2 { font-size: 24px; line-height: 32px; font-weight: 700; margin: 0 0 12px; }
@@ -196,7 +196,14 @@ body:has(.handle-rotate[data-rotating='true']), body:has(.handle-rotate[data-rot
 
 /* Translated labels size their controls without clipping menus or credit columns. */
 .element-design-menu { width: max-content; min-width: 160px; max-width: calc(100vw - 32px); }
-.conversation-history-menu.element-design-menu { left: 12px; width: 240px; max-width: calc(100% - 24px); max-height: 320px; overflow-y: auto; }
+.conversation-menu-anchor { position: relative; min-width: 0; }
+.conversation-trigger .conversation-chevron { rotate: 0deg; transition-property: rotate; }
+.conversation-trigger[aria-expanded='true'] .conversation-chevron { rotate: 180deg; }
+.conversation-history-menu.element-design-menu { top: calc(100% + 4px); left: 0; width: 240px; max-width: calc(100vw - 64px); max-height: 320px; overflow-y: auto; transform-origin: top left; }
+.conversation-history-menu[data-phase='enter'] { animation-name: conversation-menu-enter; }
+.conversation-history-menu[data-phase='exit'] { animation-name: conversation-menu-exit; }
+@keyframes conversation-menu-enter { from { opacity: 0; clip-path: inset(0 0 100% 0); translate: 0 -4px; } to { opacity: 1; clip-path: inset(0); translate: 0 0; } }
+@keyframes conversation-menu-exit { from { opacity: 1; clip-path: inset(0); translate: 0 0; } to { opacity: 0; clip-path: inset(0 0 100% 0); translate: 0 -4px; } }
 .conversation-history-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .conversation-history-empty { display: flex; align-items: center; min-height: 32px; margin: 0; padding: 0 8px; color: var(--text-tertiary); font-size: 14px; line-height: 20px; }
 .element-design-menu button > span:not(.icon) { min-width: 0; }
