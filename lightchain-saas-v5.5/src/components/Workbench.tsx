@@ -1,5 +1,6 @@
 import { PrintPlacementDialog } from './PrintPlacementDialog';
 import { CanvasMinimap } from './CanvasMinimap';
+import { TaskFeatureTip } from './TaskFeatureTip';
 import { DownloadFormatMenu } from './DownloadFormatMenu';
 import { ElementSendMenu } from './ElementSendMenu';
 import { demoNotice } from '../demo-feedback';
@@ -25,8 +26,8 @@ import { canvasToolbarPosition, intersectsViewport, screenBounds } from '../canv
 
 type Board = ReturnType<typeof useCanvas>;
 type Props = { board: Board; open: boolean; onOpenChange: (open: boolean) => void; phase: 'enter' | 'exit'; onUpload: () => void; onReplace: () => void; onHelp: () => void; onNotify: (message: string) => void; uploads: LibraryImage[]; onRememberUpload: (image: LibraryImage) => void };
-function Tool({ icon, label, active, onClick, disabled, size = 20, unread = false }: { icon: string; label: string; active?: boolean; onClick: () => void; disabled?: boolean; size?: number; unread?: boolean }) {
-  return <Button aria-label={label} title={label} aria-pressed={active} className={`workbench-tool ${active ? 'is-active' : ''}`} disabled={disabled} onClick={onClick}><Icon name={icon} size={size} />{unread && <span className="tool-unread-dot" aria-hidden="true" />}</Button>;
+function Tool({ id, icon, label, active, onClick, disabled, size = 20, unread = false }: { id?: string; icon: string; label: string; active?: boolean; onClick: () => void; disabled?: boolean; size?: number; unread?: boolean }) {
+  return <Button id={id} aria-label={label} title={label} aria-pressed={active} className={`workbench-tool ${active ? 'is-active' : ''}`} disabled={disabled} onClick={onClick}><Icon name={icon} size={size} />{unread && <span className="tool-unread-dot" aria-hidden="true" />}</Button>;
 }
 function NumberField({ label, prefix, value, min, max, unit, begin, change, disabled }: { label: string; prefix?: string; value: number; min?: number; max?: number; unit?: string; disabled?: boolean; begin: () => void; change: (n: number) => void }) {
   return <label className="property-number">{prefix && <span>{prefix}</span>}<input disabled={disabled} aria-label={label} type="number" value={Math.round(value * 10) / 10} min={min} max={max} step="1" onFocus={begin} onChange={e => { const n = e.currentTarget.valueAsNumber; if (Number.isFinite(n)) change(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n))); }} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }} />{unit && <span>{unit}</span>}</label>;
@@ -281,9 +282,10 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     {!leftTab && <div className="left-tools wb-surface" data-canvas-ui data-phase="enter" role="toolbar" aria-label={t("画布功能栏")}>
       <Tool icon="canvas-imgIconEditor7" label={t("图层")} disabled={!!localEdit} size={24} onClick={() => openLeftPanel('layers')} />
       <Tool icon="canvas-imgIconSystem6" label={t("资产")} size={24} onClick={() => openLeftPanel('assets')} />
-      <Tool icon="canvas-imgIcon2" label={t("任务")} size={24} unread={hasUnreadGeneration} onClick={() => openLeftPanel('history')} />
+      <Tool id="canvas-task-entry" icon="canvas-imgIcon2" label={t("任务")} size={24} unread={hasUnreadGeneration} onClick={() => openLeftPanel('history')} />
     </div>}
     <CanvasLeftPanel layersDisabled={!!localEdit} tab={leftTab} hasSelectedElement={board.selectedIds.length > 0} onTabChange={openLeftPanel} onClose={() => setLeftTab(null)} records={generationRecords} unread={hasUnreadGeneration} uploads={uploads} onUpload={onRememberUpload} onNotify={onNotify} />
+    <TaskFeatureTip expanded={!!leftTab} />
     <div ref={bottomToolsRef} className="bottom-tools wb-surface" data-canvas-ui data-phase={phase} role="toolbar" aria-label={t("画布工具栏")} style={{ '--bottom-tools-shift': `${bottomToolsShift}px`, '--bottom-tools-bottom': `${bottomToolsBottom}px` } as CSSProperties}>
       <Tool disabled={!!localEdit} icon="canvas-imgIconEditor" label={t("选择 V")} active={board.effectiveMode === 'select'} onClick={() => board.setMode('select')} /><Tool disabled={!!localEdit} icon="canvas-imgIconEditor1" label={t("抓手 H")} active={board.effectiveMode === 'hand'} onClick={() => board.setMode('hand')} />
       <Tool icon="canvas-imgIconEditor2" label={t("撤销")} disabled={!!localEdit || !board.canUndo} onClick={board.undo} /><Tool icon="canvas-imgIconEditor3" label={t("重做")} disabled={!!localEdit || !board.canRedo} onClick={board.redo} /><Divider vertical />
