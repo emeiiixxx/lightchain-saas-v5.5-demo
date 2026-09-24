@@ -452,3 +452,6 @@ html:not([lang='zh-CN']) .shortcuts-panel { width: 400px; }
 .model-upload-menu > .lc-button { justify-content: center; gap: 4px; background: var(--state-default); color: var(--text-secondary); font-size: 12px; font-weight: 400; white-space: nowrap; }
 .model-upload-menu > .lc-button:hover, .model-upload-menu > .lc-button:focus-visible { background: var(--brand-primary); color: var(--text-on-brand-black); }
 .model-upload-menu > .lc-button:active { background: var(--state-selected-brand); }
+
+.generation-record-tag.generation-record-tag--color { padding: 2px 4px 2px 2px; }
+.generation-record-color-swatch { width: 20px; height: 20px; flex: none; border-radius: var(--radius-s); }

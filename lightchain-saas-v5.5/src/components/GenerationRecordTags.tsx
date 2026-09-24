@@ -8,7 +8,7 @@ export function GenerationRecordTags({ record, active = true }: { record: Genera
   return <div className="generation-record-tags">
     {recordDisplayTags(record).map((tag, index) => tag.image
       ? <GenerationImageTag key={`${tag.label}-${index}`} src={tag.image} label={t(tag.label)} active={active} />
-      : <span className="generation-record-tag" key={`${tag.label}-${index}`}>{t(tag.label)}</span>)}
+      : <span className={`generation-record-tag${tag.color ? ' generation-record-tag--color' : ''}`} key={`${tag.label}-${index}`}>{tag.color && <span className="generation-record-color-swatch" style={{ backgroundColor: tag.color }} aria-hidden="true" />}{t(tag.label)}</span>)}
     {!!record.count && <span className="generation-record-tag">{record.title.includes('款式裂变')
       ? (locale === 'en' ? 'Variations: ' : locale === 'ja' ? 'バリエーション数：' : '裂变数量：')
       : `${!record.ratio || record.ratio === 'auto' ? t('智能') : record.ratio} ｜ ${record.resolution ?? '2K'} ｜ `}{t('{count}张').replace('{count}', String(record.count))}</span>}

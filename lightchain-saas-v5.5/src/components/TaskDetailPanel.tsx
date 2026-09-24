@@ -8,6 +8,7 @@ import { demoNotice } from '../demo-feedback';
 import { Button, Divider, Icon } from './ui';
 import { ProgressiveImage } from './ProgressiveImage';
 import { GenerationRecordTags } from './GenerationRecordTags';
+import { recordHasPrompt } from '../generation-record-display';
 import { ElementSendMenu } from './ElementSendMenu';
 import { TaskRecordMoreMenu } from './TaskRecordMoreMenu';
 
@@ -55,8 +56,8 @@ export function TaskDetailPanel({ record, selectedIndex, active, onSelect, onLib
         }}><ProgressiveImage src={image.url} alt="" eager fit="cover" /></button>)}
       </nav>
       <GenerationRecordTags record={record} active={active} />
-      {record.prompt && <div className="generation-record-prompt task-detail-prompt">
-        <p>{t(record.prompt)}</p>
+      {recordHasPrompt(record) && <div className="generation-record-prompt task-detail-prompt">
+        <p>{t(record.prompt!)}</p>
         <div className="generation-record-actions">
           <Button onClick={onLibrary}><Icon name="generation-record-imgLeftIcon" size={16} />{t('提示词库')}</Button><Divider vertical />
           <Button onClick={event => onSave(event.currentTarget, t(record.prompt!))}><Icon name="generation-record-imgLeftIcon1" size={16} />{t('保存提示词')}</Button><Divider vertical />

@@ -22,7 +22,7 @@ export type GenerationRecord = {
   supportsPrompt?: boolean; printMode?: 'position' | 'repeat';
   sourceId?: string;
   id: string; title: string; time: string; prompt?: string; pending?: boolean; generating?: boolean; failed?: boolean; ratio?: string; resolution?: string;
-  tags: { label: string; image?: string }[];
+  tags: { label: string; image?: string; color?: string }[];
   count?: number;
   resultHeight?: number;
   images: { url: string; height: number }[];
@@ -44,6 +44,14 @@ const demoRecords: GenerationRecord[] = [
     tags: [{ label: '服装图', image: asset('imgImageAsset1') }],
     prompt: '帮我换两个颜色看看，紫色，小碎花',
     images: ['imgAsset5', 'imgAsset6'].map(name => ({ url: asset(name), height: 92 })),
+  },
+  { id: 'figma-color-all', title: '颜色修改', time: '2026-09-22 09:29', count: 2, supportsPrompt: false,
+    tags: [{ label: '服装图', image: '/assets/color-change-source.png' }, { label: '#BB9CAC', color: '#BB9CAC' }, { label: '改色区域：全部' }],
+    images: [{ url: '/assets/color-change-result.png', height: 92 }],
+  },
+  { id: 'figma-color-custom', title: '颜色修改-拼接提示词不展示', time: '2026-09-22 09:29', count: 2, supportsPrompt: false,
+    tags: [{ label: '服装图', image: '/assets/color-change-source.png' }, { label: '#BB9CAC', color: '#BB9CAC' }, { label: '改色区域：自定义' }],
+    images: [{ url: '/assets/color-change-result.png', height: 92 }],
   },
 ];
 // Seven additional demo entries reuse the available design assets and prompt examples.
@@ -161,7 +169,7 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
         </div> : <div className="generation-record-list">
           {allRecords.map((record, index) => <article className="generation-record" key={record.id}>
             <div className="generation-record-info">
-              <div className="generation-record-heading"><div className="generation-record-heading-text"><h3>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={() => void downloadGroup(record)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget({ kind: 'record', record })} /></div>
+              <div className="generation-record-heading"><div className="generation-record-heading-text"><h3 data-tooltip={t(record.title)}>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={() => void downloadGroup(record)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget({ kind: 'record', record })} /></div>
               <GenerationRecordTags record={record} active={tab === 'history'} />
               {recordHasPrompt(record) && <div className="generation-record-prompt">
                 <p data-tooltip={t(record.prompt!)}>{t(record.prompt!)}</p>
