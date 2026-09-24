@@ -83,6 +83,6 @@ export function TooltipHost() {
   if (!shown.value) return null;
   return createPortal(<div ref={ref} id={id} role="tooltip" popover="manual" className="lc-tooltip" data-side="top" data-phase={shown.phase} data-node-id="406:2959">
     <div className="lc-tooltip-bubble">{shown.value.label}</div>
-    <img className="lc-tooltip-arrow" src="/assets/tooltip/arrow.svg" alt="" aria-hidden="true" width="8" height="4" />
+    <span className="lc-tooltip-arrow" aria-hidden="true" />
   </div>, shown.value.container);
 }
