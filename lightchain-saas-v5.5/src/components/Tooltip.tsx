@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { usePresence } from '../usePresence';
 
 type Target = { anchor: HTMLElement; label: string; container: HTMLElement };
+const shouldShowTooltip = (anchor: HTMLElement) => !anchor.hasAttribute('data-tooltip-truncated-only')
+  || anchor.scrollHeight > anchor.clientHeight + 1 || anchor.scrollWidth > anchor.clientWidth + 1;
 // Delegated events cover native disabled buttons without adding layout wrappers.
 export function TooltipHost() {
   const id = useId();
@@ -14,6 +16,7 @@ export function TooltipHost() {
     const anchorOf = (node: EventTarget | null) => node instanceof Element ? node.closest<HTMLElement>('[data-tooltip]') : null;
     const show = (anchor: HTMLElement | null) => {
       if (!anchor || anchor.closest('[inert]')) return;
+      if (!shouldShowTooltip(anchor)) { setTarget(null); return; }
       const label = anchor.dataset.tooltip;
       if (label) setTarget(current => current?.anchor === anchor && current.label === label ? current : { anchor, label, container: anchor.closest('dialog') ?? document.body });
     };
@@ -59,7 +62,7 @@ export function TooltipHost() {
     if (!tip.matches(':popover-open')) tip.showPopover();
     let frame = 0;
     const position = () => {
-      if (!anchor.isConnected || anchor.closest('[inert]') || (anchor.closest('dialog') && !anchor.closest('dialog')!.open)) { setTarget(null); return; }
+      if (!anchor.isConnected || !shouldShowTooltip(anchor) || anchor.closest('[inert]') || (anchor.closest('dialog') && !anchor.closest('dialog')!.open)) { setTarget(null); return; }
       const a = anchor.getBoundingClientRect();
       const w = window.innerWidth, h = window.innerHeight;
       const side = anchor.closest('.canvas-side-toolbar, .left-tools') && w - a.right > tip.offsetWidth + 16 ? 'right' : a.top >= tip.offsetHeight + 12 ? 'top' : 'bottom';

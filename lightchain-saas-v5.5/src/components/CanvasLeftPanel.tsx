@@ -63,6 +63,15 @@ const additionalDemoRecords: GenerationRecord[] = [4, 2, 1, 8, 4, 1, 2].map((cou
     time: `2026-09-22 09:${String(26 - index * 3).padStart(2, '0')}`,
     count,
     images: source.images.slice(0, count),
+    prompt: index === 2 ? [
+      '参考图2的颜色与质感，将图1的服装面料替换成细腻的蓝色条纹面料。',
+      '保留原有连衣裙轮廓、收腰比例和裙摆长度，让面料自然贴合身体。',
+      '领口改成稍深的V领，保留翻领结构，避免露出过多。',
+      '袖口适当加长，保持灯笼袖的蓬松感，褶皱要自然。',
+      '腰带使用同款条纹面料，系结位置与原图一致。',
+      '保留人物的面部、发型、姿势和背景，只调整服装部分。',
+      '整体光影与原图保持一致，清晰呈现面料纹理和缝线细节。',
+    ].join('\n') : source.prompt,
   };
 });
 const tabs = [
@@ -172,7 +181,7 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
               <div className="generation-record-heading"><div className="generation-record-heading-text"><h3 data-tooltip={t(record.title)}>{t(record.title)}</h3><time>{record.time}</time></div><TaskRecordMoreMenu canDownload={record.images.length > 0} canRegenerate={!record.generating && !record.pending} onDownload={() => void downloadGroup(record)} onRegenerate={() => onRegenerate(record)} onDelete={() => setDeleteTarget({ kind: 'record', record })} /></div>
               <GenerationRecordTags record={record} active={tab === 'history'} />
               {recordHasPrompt(record) && <div className="generation-record-prompt">
-                <p data-tooltip={t(record.prompt!)}>{t(record.prompt!)}</p>
+                <p data-tooltip={t(record.prompt!)} data-tooltip-truncated-only>{t(record.prompt!)}</p>
                 <div className="generation-record-actions">
                   <Button onClick={() => setLibraryOpen(true)}><Icon name="generation-record-imgLeftIcon" size={16} />{t('提示词库')}</Button><Divider vertical />
                   <Button aria-haspopup="dialog" aria-expanded={saveTarget?.content === t(record.prompt!)} onClick={event => setSaveTarget({ anchor: event.currentTarget, content: t(record.prompt!) })}><Icon name="generation-record-imgLeftIcon1" size={16} />{t('保存提示词')}</Button><Divider vertical />
