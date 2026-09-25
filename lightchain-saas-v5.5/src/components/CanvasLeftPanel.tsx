@@ -89,6 +89,8 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
   onRegenerate: (record: GenerationRecord) => void; onDeleteRecord: (id: string) => void; onDeleteResult: (id: string, index: number) => void;
 }) {
   const { t, locale } = useLocale();
+  const compactLibraryLabel = locale === 'en' ? 'Prompts' : locale === 'ja' ? 'プロンプト集' : '提示词库';
+  const compactSavePromptLabel = locale === 'en' ? 'Save' : locale === 'ja' ? '保存' : '保存';
   const shown = usePresence(tab);
   const switcher = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState<CSSProperties>({ visibility: 'hidden' });
@@ -184,8 +186,8 @@ export function CanvasLeftPanel({ tab, hasSelectedElement, onTabChange, onClose,
               {recordHasPrompt(record) && <div className="generation-record-prompt">
                 <p data-tooltip={t(record.prompt!)} data-tooltip-truncated-only>{t(record.prompt!)}</p>
                 <div className="generation-record-actions">
-                  <Button onClick={() => setLibraryOpen(true)}><Icon name="generation-record-imgLeftIcon" size={16} />{t('提示词库')}</Button><Divider vertical />
-                  <Button aria-haspopup="dialog" aria-expanded={saveTarget?.content === t(record.prompt!)} onClick={event => setSaveTarget({ anchor: event.currentTarget, content: t(record.prompt!) })}><Icon name="generation-record-imgLeftIcon1" size={16} />{t('保存提示词')}</Button><Divider vertical />
+                  <Button onClick={() => setLibraryOpen(true)} aria-label={t('提示词库')} title={t('提示词库')}><Icon name="generation-record-imgLeftIcon" size={16} />{compactLibraryLabel}</Button><Divider vertical />
+                  <Button aria-haspopup="dialog" aria-expanded={saveTarget?.content === t(record.prompt!)} aria-label={t('保存提示词')} title={t('保存提示词')} onClick={event => setSaveTarget({ anchor: event.currentTarget, content: t(record.prompt!) })}><Icon name="generation-record-imgLeftIcon1" size={16} />{compactSavePromptLabel}</Button><Divider vertical />
                   <Button onClick={() => void copyPrompt(t(record.prompt!))}><Icon name="generation-record-imgLeftIcon2" size={16} />{t('复制')}</Button>
                 </div>
               </div>}

@@ -27,6 +27,15 @@ import { canvasToolbarPosition, intersectsViewport, screenBounds } from '../canv
 
 type Board = ReturnType<typeof useCanvas>;
 type Props = { board: Board; open: boolean; onOpenChange: (open: boolean) => void; phase: 'enter' | 'exit'; onUpload: () => void; onReplace: () => void; onHelp: () => void; onNotify: Notify; uploads: LibraryImage[]; onRememberUpload: (image: LibraryImage) => void };
+type AgentMessage = { role: 'user' | 'assistant'; text: string; images?: string[]; demo?: boolean };
+const demoConversation: AgentMessage[] = [
+  { role: 'user', text: '参考这件连衣裙，保留版型和收腰，换成浅蓝色条纹面料。', images: ['/assets/generation-record-imgImageAsset1.jpg'], demo: true },
+  { role: 'assistant', text: '可以。会保留 V 领、腰线和灯笼袖，先给你一个浅蓝条纹方向。', images: ['/assets/generation-record-imgAsset4.jpg'], demo: true },
+  { role: 'user', text: '条纹再细一点，袖口保持蓬松，裙摆自然垂下。', demo: true },
+  { role: 'assistant', text: '已调整条纹密度和袖口比例。你也可以对比浅紫、雾绿两种配色。', images: ['/assets/generation-record-imgAsset5.jpg', '/assets/generation-record-imgAsset6.jpg'], demo: true },
+  { role: 'user', text: '雾绿这版更接近想要的效果。再看一下正面细节。', images: ['/assets/generation-record-imgAsset6.jpg'], demo: true },
+  { role: 'assistant', text: '这是当前方向的正面参考。领口、腰线和袖口都沿用前面的要求。', images: ['/assets/generation-record-imgAsset6.jpg'], demo: true },
+];
 function Tool({ id, icon, label, active, onClick, disabled, size = 20, unread = false }: { id?: string; icon: string; label: string; active?: boolean; onClick: () => void; disabled?: boolean; size?: number; unread?: boolean }) {
   return <Button id={id} aria-label={label} title={label} aria-pressed={active} className={`workbench-tool ${active ? 'is-active' : ''}`} disabled={disabled} onClick={onClick}><Icon name={icon} size={size} />{unread && <span className="tool-unread-dot" aria-hidden="true" />}</Button>;
 }
@@ -82,8 +91,8 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     input.value = '';
     textarea.current?.focus();
   };
-  const [conversation, setConversation] = useState<string[]>([]);
-  const [savedConversations, setSavedConversations] = useState<string[][]>([]);
+  const [conversation, setConversation] = useState<AgentMessage[]>(() => [...demoConversation]);
+  const [savedConversations, setSavedConversations] = useState<AgentMessage[][]>([]);
   const [menu, setMenu] = useState<string | null>(null);
   const [minimapOpen, setMinimapOpen] = useState(false);
   const shownMinimap = usePresence(minimapOpen && !board.locked ? true : null);
@@ -116,7 +125,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
   const openLeftPanel = (value: LeftPanelTab) => { setLeftTab(value); if (value === 'history') setHasUnreadGeneration(false); else if (value === 'assets' || board.selectedIds.length > 0) onNotify(demoNotice(locale)); };
   // Demo submissions stand in for new generation records until generation is connected.
   const recordGenerationRequest = (request: string, title = "AI助手") => {
-    setConversation(previous => [...previous, request]);
+    setConversation(previous => [...previous, { role: 'user', text: request }, { role: 'assistant', text: '已记录设计需求。当前为交互 Demo，暂未接入 AI 生成。' }]);
     const inputImage = board.images.find(image => image.id === board.selected);
     const now = new Date();
     const time = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -174,7 +183,7 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
     const isPrint = independent && localEditTool === '印花上身';
     const supportsPrompt = !isPrint;
     setGenerationRecords(previous => [{ id, sourceId, title: independent ? `款式 - ${localEditTool}` : '快捷编辑', time, supportsPrompt, printMode: isPrint ? (draft.printMode ?? 'position') : undefined, prompt: supportsPrompt ? (draft.value.trim() || undefined) : undefined, generating: true, count, resultHeight: 92 * placeholders[0].height / placeholders[0].width, ratio: draft.ratio, resolution: draft.resolution, tags: [{ label: '服装图', image: source.url }, ...draft.references.map(ref => ({ label: independent && localEditTool === 'AI试衣' ? '模特图' : independent && localEditTool === '印花上身' ? '印花图' : '参考图', image: ref.url })), ...(isPrint ? [{ label: draft.printMode === 'repeat' ? '满印' : '指定位置' }] : [])], images: [] }, ...previous]);
-    if (!independent) setConversation(previous => [...previous, request]);
+    if (!independent) setConversation(previous => [...previous, { role: 'user', text: request }, { role: 'assistant', text: '已记录设计需求。当前为交互 Demo，暂未接入 AI 生成。' }]);
     setHasUnreadGeneration(leftTab !== 'history');
     setQuickEdit(null);
     // Insert beside the source and ease colliding content right; keep the viewport unchanged.
@@ -396,11 +405,20 @@ export function Workbench({ board, open, onOpenChange, phase, onUpload, onReplac
                 const items = Array.from(event.currentTarget.querySelectorAll('button'));
                 const index = items.indexOf(event.target as HTMLButtonElement);
                 items[event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
-              }}>{savedConversations.length ? savedConversations.map((c, i) => <Button role="menuitem" key={i} onClick={() => { setConversation(c); setMenu(null); document.querySelector<HTMLButtonElement>('.conversation-trigger')?.focus(); }}><span className="conversation-history-title">{c[0].slice(0, 25)}</span></Button>) : <p className="conversation-history-empty" role="status">{t("暂无历史对话")}</p>}</div>}
+              }}>{savedConversations.length ? savedConversations.map((c, i) => <Button role="menuitem" key={i} onClick={() => { setConversation(c); setMenu(null); document.querySelector<HTMLButtonElement>('.conversation-trigger')?.focus(); }}><span className="conversation-history-title">{t(c[0].text).slice(0, 25)}</span></Button>) : <p className="conversation-history-empty" role="status">{t("暂无历史对话")}</p>}</div>}
             </div>
             <Tool icon="canvas-imgIcon4" label={t("新建对话")} size={24} onClick={() => { setMenu(null); if (conversation.length) setSavedConversations(prev => [...prev, conversation]); setConversation([]); setPrompt(''); setAttachments([]); }} />
           </div>
-          <div className="agent-content">{conversation.length ? conversation.map((text, i) => <div className="agent-message" key={i}><p>{text}</p><small>{t("已记录设计需求。当前为交互 Demo，暂未接入 AI 生成。")}</small></div>) : <><h2>{t("今天你想设计什么？")}</h2><p>{t("从下方输入你的设计需求，或上传/从画布中选择图片进行修改与设计")}</p><div className="agent-suggestions">{[t("多款融合"), t("面料套版"), t("单款裂变"), t("印花设计"), t("工艺单素材包")].map(text => <button key={text} onClick={() => action(text)}><span className="suggestion-idea"><Icon name="suggestion-idea" size={20} /></span><span className="suggestion-label">{text}</span><span className="suggestion-add"><Icon name="suggestion-add" size={20} /></span></button>)}</div></>}</div>
+          <div className="agent-content">{conversation.length ? <div className="agent-thread">
+            {conversation[0].demo && <span className="agent-demo-caption">{t('演示对话')}</span>}
+            {conversation.map((message, i) => <div className={`agent-turn agent-turn--${message.role}`} key={i}>
+              <span className="agent-turn-label">{message.role === 'user' ? t('我') : t('AI助手')}</span>
+              <div className="agent-turn-bubble">
+                <p>{t(message.text)}</p>
+                {!!message.images?.length && <div className="agent-turn-images">{message.images.map((src, imageIndex) => <img key={`${src}-${imageIndex}`} src={src} alt={t(message.role === 'user' ? '参考图片' : '示例结果图')} loading={i > 1 ? 'lazy' : 'eager'} />)}</div>}
+              </div>
+            </div>)}
+          </div> : <><h2>{t("今天你想设计什么？")}</h2><p>{t("从下方输入你的设计需求，或上传/从画布中选择图片进行修改与设计")}</p><div className="agent-suggestions">{[t("多款融合"), t("面料套版"), t("单款裂变"), t("印花设计"), t("工艺单素材包")].map(text => <button key={text} onClick={() => action(text)}><span className="suggestion-idea"><Icon name="suggestion-idea" size={20} /></span><span className="suggestion-label">{text}</span><span className="suggestion-add"><Icon name="suggestion-add" size={20} /></span></button>)}</div></>}</div>
           <div className="agent-input-area"><div className="agent-composer">
             {attachments.length > 0 && <div className="agent-attachments">{attachments.map(item => <div className="agent-attachment-chip" key={item.id}><span className={`agent-attachment-icon agent-attachment-icon--${item.kind}`}><Icon name={`agent-add-${item.kind}`} size={16} /></span><span title={item.file.name}>{item.file.name}</span><Button aria-label={`${t("移除")} ${item.file.name}`} onClick={() => setAttachments(prev => prev.filter(a => a.id !== item.id))}><Icon name="close" size={12} /></Button></div>)}</div>}
             <textarea ref={textarea} aria-label={t("设计需求")} placeholder={t("上传产品图，然后向我说出设计需求")} value={prompt} onChange={e => setPrompt(e.target.value)} />
