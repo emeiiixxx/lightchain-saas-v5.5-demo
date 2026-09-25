@@ -170,6 +170,9 @@
 [data-theme="dark"] { --text-link: #0BC1B8; --text-link-hover: #70EBDE; }
 [data-theme="light"] { --text-link: #069B96; --text-link-hover: #0BC1B8; }
 
+/* Compact control shadow, bound to Overlay/weak in both themes. */
+:root { --shadow-s: 0 2px 4px var(--overlay-weak); }
+
 /* Beta Shadow/M: 0,6 / blur14 / spread-2, bound to Overlay/weak. */
 :root { --shadow-m: 0 6px 14px -2px var(--overlay-weak); }
 
